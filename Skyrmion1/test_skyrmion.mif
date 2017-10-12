@@ -1,0 +1,122 @@
+proc EllipseZ { x y z } {
+set r1 [expr 2.*$x -1. ]
+set r2 [expr 2.*$y -1. ]
+set r [expr {sqrt($r1*$r1+$r2*$r2)}]
+if {$r>1.0} {return 0}
+return 1
+}
+
+SetOptions {
+ scalar_output_format %.17g
+ scalar_field_output_format {binary 8}
+ scalar_field_output_meshtype rectangular
+ vector_field_output_format {binary 8}
+ vector_field_output_meshtype rectangular
+}
+
+Specify Oxs_MultiAtlas:multiatlas1 [subst {
+
+atlas { Oxs_ScriptAtlas:stt_layer2 {
+xrange {125e-9 150e-9}
+yrange {0e-9 70e-9}
+zrange {0e-9 3e-9}
+regions {stt_layer2 emptystt_layer2}
+script_args { relpt }
+script EllipseZ
+} }
+
+atlas { Oxs_ScriptAtlas:sk_layer {
+xrange {25e-9 125e-9}
+yrange {0e-9 70e-9}
+zrange {0e-9 3e-9}
+regions {sk_layer emptysk_layer}
+script_args { relpt }
+script EllipseZ
+} }
+
+atlas { Oxs_ScriptAtlas:stt_layer1 {
+xrange {0e-9 25e-9}
+yrange {0e-9 70e-9}
+zrange {0e-9 3e-9}
+regions {stt_layer1 emptystt_layer1}
+script_args { relpt }
+script EllipseZ
+} }
+
+}]
+
+Specify Oxs_UniformVectorField:H_ext {
+ vector { 1 0 0 }
+}
+
+Specify Oxs_UniaxialAnisotropy:down_anisotropy [subst { 
+K1 { Oxs_AtlasScalarField {
+ atlas :multiatlas1
+ default_value 0
+ values {
+ stt_layer2 0.8e6
+}
+}}
+ axis { Oxs_AtlasVectorField {
+ atlas :multiatlas1
+ default_value { 1 0 0 }
+ values {
+ stt_layer2 { 0 -1 0 }
+}
+}}
+}]
+
+Specify Oxs_UniaxialAnisotropy:up_anisotropy [subst {
+K1 { Oxs_AtlasScalarField {
+ atlas :multiatlas1
+ default_value 0
+ values {
+ stt_layer1 0.8e6
+}
+}}
+ axis { Oxs_AtlasVectorField {
+ atlas :multiatlas1
+ default_value { 1 0 0 }
+ values {
+ stt_layer1 { 0 1 0 }
+}
+}}
+}]
+
+Specify Oxs_UniformExchange:Heisenberg {
+ A 1.6e-11
+}
+
+Specify Oxs_Demag {}
+
+Specify Oxs_RectangularMesh:mesh {
+ cellsize { 2e-09 2e-09 5e-10 }
+ atlas multiatlas1
+}
+
+Specify Oxs_RungeKuttaEvolve:evolve {
+ alpha 0.01
+}
+
+Specify Oxs_TimeDriver: {
+ Ms { Oxs_AtlasScalarField {
+ atlas multiatlas1
+ default_value 0
+ values {
+sk_layer 0
+}}}
+ m0 { Oxs_AtlasVectorField {
+ atlas multiatlas1
+ default_value { 1 0 0 }
+ values {
+sk_layer { H_ext }
+}}}
+ evolver evolve
+ mesh mesh
+}
+
+Destination archive mmArchive
+
+Schedule DataTable archive step 1000
+
+Schedule Oxs_TimeDriver::Magnetization archive step 1000
