@@ -1,0 +1,104 @@
+proc EllipseZ { x y z } {
+set r1 [expr 2.*$x -1. ]
+set r2 [expr 2.*$y -1. ]
+set r [expr {sqrt($r1*$r1+$r2*$r2)}]
+if {$r>1.0} {return 0}
+return 1
+}
+
+SetOptions {
+ scalar_output_format %.17g
+ scalar_field_output_format {binary 8}
+ scalar_field_output_meshtype rectangular
+ vector_field_output_format {binary 8}
+ vector_field_output_meshtype rectangular
+}
+
+Specify Oxs_MultiAtlas:multiatlas1 [subst {
+
+atlas { Oxs_ScriptAtlas:skyrmion_feld {
+xrange {0e-9 100e-9}
+yrange {0e-9 70e-9}
+zrange {0e-9 6e-9}
+regions {skyrmion_feld emptyskyrmion_feld}
+script_args { relpt }
+script EllipseZ
+} }
+
+}]
+
+Specify Oxs_UniformExchange:HeisenberExchange {
+ A 1.6e-11
+}
+
+Specify Oxs_Demag {}
+
+Specify Oxs_RectangularMesh:mesh {
+ cellsize { 1e-09 1e-09 1e-09 }
+ atlas multiatlas1
+}
+
+Specify Oxs_SpinXferEvolve:evolve {
+ method rkf54
+ stage_start auto
+ J 0
+ mp { 1 0 0 }
+ fixed_spins {
+  multiatlas1
+}
+ alpha 0.015
+}
+
+Destination archive mmArchive
+
+Schedule DataTable archive step 1000
+
+Schedule Oxs_TimeDriver:driver:Magnetization archive step 1000
+
+Schedule Oxs_Demag::Field archive step 1000
+
+Specify Oxs_TimeDriver: {
+ Ms { Oxs_AtlasScalarField {
+ atlas multiatlas1
+ default_value 0
+ values {
+skyrmion_feld 10e6
+}}}
+ m0 { Oxs_AtlasVectorField {
+ atlas multiatlas1
+ default_value { 1 0 0 }
+ values {
+skyrmion_feld { H }
+}}}
+ evolver evolve
+ mesh mesh
+}
+
+Specify Oxs_UniformVectorField:H {
+ vector { 0 0 1 }
+}
+
+Specify Oxs_DMExchange6Ngbr:DMEx [subst {
+  default_D 4e-3
+  atlas :multiatlas1
+  D {
+skyrmion_feld skyrmion_feld  4e-3
+  }
+}]
+
+Specify Oxs_UniaxialAnisotropy:PMA [subst {
+K1 { Oxs_AtlasScalarField {
+ atlas :multiatlas1
+ default_value 0
+ values {
+ skyrmion_feld 2e-11
+}
+}}
+ axis { Oxs_AtlasVectorField {
+ atlas :multiatlas1
+ default_value { 1 0 0 }
+ values {
+ skyrmion_feld { 1 0 0 }
+}
+}}
+}]
