@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import glob
+import os
+
 
 class ResonantFrequency:
     def __init__(self, directory):
@@ -30,6 +33,7 @@ class ResonantFrequency:
                 lines = f.readlines()
             f.close()
             cols = header[-1]
+            cols = cols.replace("MF", "Oxs_MF")
             cols = cols.replace("} ", "")
             cols = cols.replace("{", "")
             cols = cols.split("Oxs_")
@@ -81,25 +85,59 @@ class ResonantFrequency:
     def fourier_analysis(self, sample):
         return np.fft.fft(sample, axis=0)
 
+    def plot_fourier(self):
+        pass
+
 
 if __name__ == "__main__":
     # filename = glob.glob(os.path.join(self.directory, '*.odt'))[0]
 
-    path = r"D:\Dokumenty\oommf-simulations\AFLC_dump\coup_swag\Default\AFCoupFieldDomain.odt"
+    path = r"D:\Dokumenty\oommf-simulations\REZ\resonance_valid\Default\AFCoupFieldDomain.odt"
+    directory = r'D:\Dokumenty\oommf-simulations\AFLC_dump\FCMPW_FieldSweep'
+    # to_search = os.path.join(directory, '*.odt')
+    # filepaths = glob.glob(to_search)
+    # print(filepaths)
     f_p = ResonantFrequency(path)
     df, stages = f_p.read_directory_as_df_file(path)
-    voltage, mean_voltage = f_p.voltage_calculation(df, time_offset=26e-9, time_stop=36e-9)
-    print("Mean voltage: ", mean_voltage)
-    fourier = f_p.fourier_analysis(voltage)
-    n = fourier.size
-    freq = np.fft.fftfreq(n, d=1e-13)
-    max_val = 0
-    max_freq = 0
-    fourier = np.abs(fourier)
-    for frequency, amp in zip(freq, fourier):
-        if amp > max_val and frequency >= 0:
-            max_val = amp
-            max_freq = frequency
-    print(max_freq/1e9, amp)
-    # plt.stem(freq, np.abs(fourier))
+    print(df.columns)
+    time_offset = 30e-9
+    time_stop = 100
+    df_limited = df.loc[(df['TimeDriver::Simulation time'] > time_offset) &
+                        (df['TimeDriver::Simulation time'] < time_stop)]
+    mx = f_p.fourier_analysis(df_limited['TimeDriver::mx'])
+    my = f_p.fourier_analysis(df_limited['TimeDriver::my'])
+    mz = f_p.fourier_analysis(df_limited['TimeDriver::mz'])
+    n = mx.size
+    freq = np.fft.fftfreq(n, d=1e-11)
+    for m in [mx, my, mz]:
+        m = abs(m)
+        max_val = 0
+        max_freq = 0
+        for frequency, amp in zip(freq, m):
+            if amp > max_val and frequency > 0:
+                max_val = amp
+                max_freq = frequency
+        print(max_freq/1e9, max_val)
+    # print(max_freq/1e9, amp)
+    #
+    #plt.stem(freq, np.abs(mx), c='g')
+    #plt.stem(freq, np.abs(my), c='r')
+    # plt.stem(freq, np.abs(mz), c='o')
     # plt.show()
+    plt.plot(df['TimeDriver::mx'], c='b')
+    plt.plot(df['TimeDriver::my'], c='y')
+    plt.plot(df['TimeDriver::mz'], c='g')
+    plt.show()
+
+    # voltage, mean_voltage = f_p.voltage_calculation(df, time_offset=26e-9, time_stop=36e-9)
+    # print("Mean voltage: ", mean_voltage)
+    # fourier = f_p.fourier_analysis(voltage)
+    # n = fourier.size
+        # freq = np.fft.fftfreq(n, d=1e-13)
+    # max_val = 0
+    # max_freq = 0
+    # fourier = np.abs(fourier)
+    # for frequency, amp in zip(freq, fourier):
+    #     if amp > max_val and frequency >= 0:
+    #         max_val = amp
+    #         max_freq = frequency
