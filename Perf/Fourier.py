@@ -13,6 +13,7 @@ class ResonantFrequency:
         self.analysis_method = self.fourier_analysis
         self.time_step = 1e-11
         self.param_sweep = None
+        self.dispersion = False
 
     def set_parameters(self, **kwargs):
         """
@@ -52,12 +53,13 @@ class ResonantFrequency:
             single_param_resonant_frequencies = self.fourier_analysis(data_frame=shortened_df)
             global_resonant_frequencies.append(single_param_resonant_frequencies)
         global_resonant_frequencies = np.array(global_resonant_frequencies)
-        mx_relation = global_resonant_frequencies[:, 0, 0]
-        my_relation = global_resonant_frequencies[:, 1, 0]
-        mz_relation = global_resonant_frequencies[:, 2, 0]
-        self.two_parameter_relation(mx_relation, title='mx relation')
-        self.two_parameter_relation(my_relation, title='my relation')
-        self.two_parameter_relation(mz_relation, title='mz relation')
+        if self.dispersion:
+            mx_relation = global_resonant_frequencies[:, 0, 0]
+            my_relation = global_resonant_frequencies[:, 1, 0]
+            mz_relation = global_resonant_frequencies[:, 2, 0]
+            self.two_parameter_relation(mx_relation, title='mx relation')
+            self.two_parameter_relation(my_relation, title='my relation')
+            self.two_parameter_relation(mz_relation, title='mz relation')
 
     def read_directory_as_df_file(self, filename):
         """
@@ -111,14 +113,15 @@ class ResonantFrequency:
             stages = len(lines) - 1
             return df, stages
 
-    def cutout_sample(self, data, start_time=None, stop_time=None):
+    def cutout_sample(self, data, start_time=0.00, stop_time=100.00):
         if start_time is None:
             return data
         if stop_time is None:
             return data.loc[(data['TimeDriver::Simulation time'] > start_time)]
         else:
-            return data.loc[(data['TimeDriver::Simulation time'] > start_time) &
-                            (data['TimeDriver::Simulation time']) < stop_time]
+            print("Start time {}, stop time {}".format(start_time, stop_time))
+            return data.loc[(data['TimeDriver::Simulation time'] >= start_time) &
+                            (data['TimeDriver::Simulation time'] < stop_time)]
 
     def voltage_calculation(self, df, time_offset, time_stop=10e9):
         df_limited = df.loc[(df['TimeDriver::Simulation time'] > time_offset) &
@@ -177,14 +180,18 @@ class ResonantFrequency:
         self.subplot_fourier(potential_fourier_data, time_step=time_step, titles=cols)
         return np.array(max_freq_set, dtype=np.float64)
 
-    def single_plot_columns(self, df, cols=('TimeDriver::mx',
+    def single_plot_columns(self, tdf, cols=('TimeDriver::mx',
                                             'TimeDriver::my',
                                             'TimeDriver::mz')):
         handles = []
+        print(tdf.size)
+        mdf = self.cutout_sample(tdf, start_time=4.99e-9, stop_time=5.2e-9)
+        print(tdf.size)
         for column in cols:
-            ax, = plt.plot(df[column], label=column)
+            ax, = plt.plot(mdf['TimeDriver::Simulation time'], mdf[column], label=column)
             handles.append(ax)
         plt.legend(handles=handles)
+        plt.title("Zoomed")
         plt.show()
 
     def two_parameter_relation(self, parameter, title='Dispersion relation'):
@@ -195,14 +202,15 @@ class ResonantFrequency:
 
 if __name__ == "__main__":
     path = r"D:\Dokumenty\oommf-simulations\REZ\rez_minus1e3\Default\AFCoupFieldDomain.odt"
-    # directory = r'D:\Dokumenty\oommf-simulations\REZ\10nsResonance'
-    p_dir = r"D:\Dokumenty\oommf-simulations\AFLC_dump\FCMPW_FieldSweep"
+    p_dir = r'D:\Dokumenty\oommf-simulations\REZ\10nsResonance'
+    # p_dir = r"D:\Dokumenty\oommf-simulations\AFLC_dump\FCMPW_FieldSweep"
     rf = ResonantFrequency(directory=p_dir)
     parameter_dict = {
         "time_step": 1e-11,
         "start_time": 5.1e-9,
         "stop_time": 9.99e-9,
-        "param_sweep": [-0.001, -0.0002, -0.0006, 0.0002, 0.00099999]
+        "param_sweep": [-0.001, -0.0002, -0.0006, 0.0002, 0.00099999],
+        "dispersion": False
     }
     rf.set_parameters(**parameter_dict)
     rf.initialize_analysis()
