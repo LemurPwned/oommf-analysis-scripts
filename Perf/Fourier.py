@@ -17,7 +17,7 @@ class ResonantFrequency:
 
     def set_parameters(self, **kwargs):
         """
-        @param **kwargs are the arguments to be passed to the main widget
+        :param: **kwargs are the arguments to be passed to the main widget
         iterator
         """
         for k, v in kwargs.items():
@@ -36,10 +36,19 @@ class ResonantFrequency:
         return filename_candidates
 
     def fourier_analysis(self, data_frame):
+        """
+        Analysis type: Discrete Fourier Transform
+        :param data_frame: DataFrame object
+        :return: set of resonant frequencies and their values
+        """
         print("FOURIER ANALYSIS INITIATED")
         return self.find_max_frequency(df=data_frame, time_step=self.time_step)
 
     def initialize_analysis(self):
+        """
+        initializes analysis type specified in parameter file
+        :return: None
+        """
         # ask for all .odt files in the sub-roots of a specified directory
         file_names = self.search_directory_for_odt()
         self.set_parameters()
@@ -64,8 +73,8 @@ class ResonantFrequency:
     def read_directory_as_df_file(self, filename):
         """
         Reads .odt file
-        @param filename is .odt file path
-        @return dataFrame and stages number
+        :param: filename is .odt file path
+        :return: DataFrame and stages number
         """
         if filename is None:
             print("\nOdt file has not been found")
@@ -114,6 +123,13 @@ class ResonantFrequency:
             return df, stages
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):
+        """
+        cuts out time interval from sample
+        :param data: DataFrame object, must contain time column
+        :param start_time: start time = here cutout begins
+        :param stop_time:  stop time = here cutout ends
+        :return: sliced DataFrame object
+        """
         if start_time is None:
             return data
         if stop_time is None:
@@ -139,6 +155,13 @@ class ResonantFrequency:
         return voltage, mean_voltage
 
     def subplot_fourier(self, fourier_data, time_step=1e-11, titles=None):
+        """
+        plots fourier data on stem graphs
+        :param fourier_data: list of numpy arrays
+        :param time_step: sampling step
+        :param titles: used in graph legends
+        :return:
+        """
         frequency_step = np.fft.fftfreq(fourier_data[0].size, d=time_step)
         number = len(fourier_data)*100 + 10
         if titles is None:
@@ -155,10 +178,10 @@ class ResonantFrequency:
                                                             'TimeDriver::mz')):
         """
         Values given in columns must have common sampling frequency
-        :param df:
-        :param time_step:
-        :param cols:
-        :return:
+        :param df: DataFrame object containing columns specified in cols
+        :param time_step: sampling step
+        :param cols: columns for which fourier transform is to be performed
+        :return: numpy array of maximum frequencies and respective values
         """
         potential_fourier_data = []
         for col in cols:
@@ -180,21 +203,36 @@ class ResonantFrequency:
         self.subplot_fourier(potential_fourier_data, time_step=time_step, titles=cols)
         return np.array(max_freq_set, dtype=np.float64)
 
-    def single_plot_columns(self, tdf, cols=('TimeDriver::mx',
-                                            'TimeDriver::my',
-                                            'TimeDriver::mz')):
+    def single_plot_columns(self, df, x_cols=('TimeDriver::Simulation time',
+                                              'TimeDriver::Simulation time',
+                                              'TimeDriver::Simulation time'),
+                                      y_cols=('TimeDriver::mx',
+                                              'TimeDriver::my',
+                                              'TimeDriver::mz')):
+        """
+        plots a simple column set from a dataframe
+        :param df: DataFrame object
+        :param x_cols: x-columns from df to be plotted on x-axis
+        :param y_cols: y-columns from df to be plotted on y=axis
+        :return: None
+        """
         handles = []
-        print(tdf.size)
-        mdf = self.cutout_sample(tdf, start_time=4.99e-9, stop_time=5.2e-9)
-        print(tdf.size)
-        for column in cols:
-            ax, = plt.plot(mdf['TimeDriver::Simulation time'], mdf[column], label=column)
+        df = self.cutout_sample(df, start_time=4.9e-9, stop_time=5.6e-9)
+        for x_column, y_column in zip(x_cols, y_cols):
+            ax, = plt.plot(df[x_column], df[y_column], label=y_column)
             handles.append(ax)
         plt.legend(handles=handles)
-        plt.title("Zoomed")
+        plt.title("{} vs {}".format(x_cols[0], y_cols[0]))
         plt.show()
 
     def two_parameter_relation(self, parameter, title='Dispersion relation'):
+        """
+        Can build up a relation between a given parameter and parameter sweep
+        specified in the parameter dict
+        :param parameter: numpy array of size parameter sweeep
+        :param title: title of graph
+        :return: None
+        """
         plt.plot(parameter, self.param_sweep, '*')
         plt.title(title)
         plt.show()
@@ -202,7 +240,7 @@ class ResonantFrequency:
 
 if __name__ == "__main__":
     path = r"D:\Dokumenty\oommf-simulations\REZ\rez_minus1e3\Default\AFCoupFieldDomain.odt"
-    p_dir = r'D:\Dokumenty\oommf-simulations\REZ\10nsResonance'
+    p_dir = r'D:\Dokumenty\oommf-simulations\REZ\low_coupl'
     # p_dir = r"D:\Dokumenty\oommf-simulations\AFLC_dump\FCMPW_FieldSweep"
     rf = ResonantFrequency(directory=p_dir)
     parameter_dict = {
