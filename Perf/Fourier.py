@@ -175,7 +175,8 @@ class ResonantFrequency:
 
     def find_max_frequency(self, df, time_step=1e-11, cols=('TimeDriver::mx',
                                                             'TimeDriver::my',
-                                                            'TimeDriver::mz')):
+                                                            'TimeDriv'
+                                                            'er::mz')):
         """
         Values given in columns must have common sampling frequency
         :param df: DataFrame object containing columns specified in cols
@@ -204,10 +205,8 @@ class ResonantFrequency:
         return np.array(max_freq_set, dtype=np.float64)
 
     def single_plot_columns(self, df, x_cols=('TimeDriver::Simulation time',
-                                              'TimeDriver::Simulation time',
                                               'TimeDriver::Simulation time'),
-                                      y_cols=('TimeDriver::mx',
-                                              'TimeDriver::my',
+                                      y_cols=('TimeDriver::my',
                                               'TimeDriver::mz')):
         """
         plots a simple column set from a dataframe
@@ -240,7 +239,7 @@ class ResonantFrequency:
 
 if __name__ == "__main__":
     path = r"D:\Dokumenty\oommf-simulations\REZ\rez_minus1e3\Default\AFCoupFieldDomain.odt"
-    p_dir = r'D:\Dokumenty\oommf-simulations\REZ\low_coupl'
+    p_dir = r'D:\Dokumenty\oommf-simulations\REZ\low_coup_new_bias'
     # p_dir = r"D:\Dokumenty\oommf-simulations\AFLC_dump\FCMPW_FieldSweep"
     rf = ResonantFrequency(directory=p_dir)
     parameter_dict = {
