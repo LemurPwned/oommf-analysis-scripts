@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import glob
 import os
 
-
 class ResonantFrequency:
     def __init__(self, directory):
         self.directory = directory
@@ -55,13 +54,14 @@ class ResonantFrequency:
         self.set_parameters()
         global_resonant_frequencies = []
         for filename in file_names:
-            self.extract_parameter_type(filename, self.param_name)
+            if self.dispersion: self.extract_parameter_type(filename, self.param_name)
             # reads each .odt file and returns pandas DataFrame object
             df, stages = self.read_directory_as_df_file(filename)
             # performs specified data analysis
             # self.single_plot_columns(df)
             shortened_df = self.cutout_sample(df, start_time=self.start_time, stop_time=self.stop_time)
             single_param_resonant_frequencies = self.fourier_analysis(data_frame=shortened_df)
+            # voltage, m_voltage = self.voltage_calculation(shortened_df)
             global_resonant_frequencies.append(single_param_resonant_frequencies)
         global_resonant_frequencies = np.array(global_resonant_frequencies)
         self.ordered_param_set = np.array(self.ordered_param_set)
@@ -81,6 +81,10 @@ class ResonantFrequency:
             self.two_parameter_relation(x_vals, mx_ampl_val, title='mx amplitude (coupl)', xticks=x_vals[::3])
             self.two_parameter_relation(x_vals, my_ampl_val, title='my amplitude (coupl)', xticks=x_vals[::3])
             self.two_parameter_relation(x_vals, mz_ampl_val, title='mz amplitude (coupl)', xticks=x_vals[::3])
+
+            self.two_parameter_relation(mx_relation, mx_ampl_val, title='Resonance x')
+            self.two_parameter_relation(my_relation, my_ampl_val, title='Resonance y')
+            self.two_parameter_relation(mz_relation, mz_ampl_val, title='Resonance z')
 
     def read_directory_as_df_file(self, filename):
         """
@@ -151,19 +155,21 @@ class ResonantFrequency:
             return data.loc[(data['TimeDriver::Simulation time'] >= start_time) &
                             (data['TimeDriver::Simulation time'] < stop_time)]
 
-    def voltage_calculation(self, df, time_offset, time_stop=10e9):
-        df_limited = df.loc[(df['TimeDriver::Simulation time'] > time_offset) &
-                            (df['TimeDriver::Simulation time'] < time_stop)]
+    def voltage_calculation(self, df_limited):
         avg_resistance = np.mean(df_limited['MF_Magnetoresistance::magnetoresistance'])
         power = 10e-6
-        frequency = 1e8
+        frequency = 20e9
         omega = 2 * np.pi * frequency
         phase = 0
-        amplitude = np.sqrt(power/avg_resistance)
-        current = amplitude*np.sin(omega*df_limited['TimeDriver::Simulation time'] + phase)
-        voltage = df_limited['MF_Magnetoresistance::magnetoresistance']*current
+        amplitude = np.sqrt(power / avg_resistance)
+        current = amplitude * np.sin(omega * df_limited['TimeDriver::Simulation time'] + phase)
+        voltage = df_limited['MF_Magnetoresistance::magnetoresistance'] * current
         mean_voltage = np.mean(voltage)
         print("MEAN VOLTAGE {}".format(mean_voltage))
+        plt.plot(df_limited['TimeDriver::Simulation time'], voltage)
+        plt.plot(df_limited['TimeDriver::Simulation time'],
+                 np.ones(df_limited['TimeDriver::Simulation time'].shape[0])*mean_voltage)
+        plt.show()
         return voltage, mean_voltage
 
     def subplot_fourier(self, fourier_data, time_step=1e-11, titles=None):
@@ -175,7 +181,7 @@ class ResonantFrequency:
         :return:
         """
         frequency_step = np.fft.fftfreq(fourier_data[0].size, d=time_step)
-        number = len(fourier_data)*100 + 10
+        number = len(fourier_data) * 100 + 10
         if titles is None:
             titles = ["none" for x in fourier_data]
         for fourier_piece, title in zip(fourier_data, titles):
@@ -211,15 +217,15 @@ class ResonantFrequency:
                     max_val = amp
                     max_freq = frequency
             print("MAX FREQ: {}, VALUE {}".format(max_freq / 1e9, max_val))
-            max_freq_set.append([max_freq/1e9, max_val])
+            max_freq_set.append([max_freq / 1e9, max_val])
         # display Fourier
         # self.subplot_fourier(potential_fourier_data, time_step=time_step, titles=cols)
         return np.array(max_freq_set, dtype=np.float64)
 
     def single_plot_columns(self, df, x_cols=('TimeDriver::Simulation time',
                                               'TimeDriver::Simulation time'),
-                                      y_cols=('TimeDriver::my',
-                                              'TimeDriver::mz')):
+                            y_cols=('TimeDriver::my',
+                                    'TimeDriver::mz')):
         """
         plots a simple column set from a dataframe
         :param df: DataFrame object
@@ -251,7 +257,7 @@ class ResonantFrequency:
         plt.show()
 
     def extract_parameter_type(self, filename, parameter_name):
-        base_param = filename.split(parameter_name+"_")
+        base_param = filename.split(parameter_name + "_")
         param_value = float(base_param[1].split("\\")[0])
         print("ANALYSED PARAM: ", param_value)
         self.ordered_param_set.append(param_value)
@@ -260,20 +266,18 @@ class ResonantFrequency:
 if __name__ == "__main__":
     path = r"D:\Dokumenty\oommf-simulations\REZ\rez_minus1e3\Default\AFCoupFieldDomain.odt"
     p_dir = r'D:\Dokumenty\oommf-simulations\dispersion_nblc'
-    # p_dir = r"D:\Dokumenty\oommf-simulations\AFLC_dump\FCMPW_FieldSweep"
+    # p_dir = r"D:\Dokumenty\oommf-simulations\voltage_sweep_50ns"
     rf = ResonantFrequency(directory=p_dir)
     param_sweep = np.array([-1e-4, -2e-4, -3e-4, 4e-4, -5e-4, -6e-3, -7e-4, -8e-4, -9e-4, -1e-3, 0,
                             2e-4, 3e-4, 4e-4, 5e-4, 6e-4, 7e-4,
                             8e-4, 9e-4, 1e-3])
     parameter_dict = {
         "time_step": 1e-11,
-        "start_time": 5.1e-9,
-        "stop_time": 9.99e-9,
+        "start_time": 5.2e-9,
+        "stop_time": 10e-9,
         "param_sweep": param_sweep,
         "dispersion": True,
         "param_name": 'Amp'
     }
     rf.set_parameters(**parameter_dict)
     rf.initialize_analysis()
-
-
