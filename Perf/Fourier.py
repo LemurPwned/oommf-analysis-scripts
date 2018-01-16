@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import glob
 import os
 
+from multiprocessing import Pool
 
 class ResonantFrequency:
     def __init__(self, directory):
@@ -29,9 +30,11 @@ class ResonantFrequency:
         finds the possible .odt files in the specified directory
         :return: None
         """
-        directory_roots = os.path.join(self.directory, '*\*.odt')
+        directory_roots = os.path.join(self.directory, '*/*.odt')
         filename_candidates = glob.glob(directory_roots, recursive=True)
         print("{} file candidates found...".format(len(filename_candidates)))
+        if len(filename_candidates) == 0:
+            quit()
         for filename in filename_candidates:
             print(filename)
         return filename_candidates
@@ -53,28 +56,18 @@ class ResonantFrequency:
         # ask for all .odt files in the sub-roots of a specified directory
         file_names = self.search_directory_for_odt()
         self.set_parameters()
-        global_resonant_frequencies = []
         global_mean_voltages = []
         R_pp = []
-        for filename in file_names:
-            if self.dispersion: self.extract_parameter_type(filename, self.param_name)
-            # reads each .odt file and returns pandas DataFrame object
-            df, stages = self.read_directory_as_df_file(filename)
-            # performs specified data analysis
-            shortened_df = self.cutout_sample(df, start_time=self.start_time, stop_time=self.stop_time)
-            # self.single_plot_columns(shortened_df, param=self.ordered_param_set[-1])
+        pool = Pool()
+        multiple_results = [pool.apply_async(self.local_analysis,
+                                (filename,)) for filename in file_names]
 
-            rmax = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
-            rmin = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
-            R_pp.append(rmax-rmin)
-            # single_param_resonant_frequencies = self.fourier_analysis(data_frame=shortened_df)
-            voltage, m_voltage = self.voltage_calculation(shortened_df)
-            # shortened_df2 = self.cutout_sample(df, start_time=30e-9, stop_time=32e-9)
-            # plt.plot(shortened_df2['MF_Magnetoresistance::magnetoresistance'])
-            # plt.show()
-            # global_resonant_frequencies.append(single_param_resonant_frequencies)
-            global_mean_voltages.append(m_voltage)
-        # global_resonant_frequencies = np.array(global_resonant_frequencies)
+        for result in multiple_results:
+            value = result.get()
+            R_pp.append(value[0])
+            global_mean_voltages.append(value[1])
+            self.ordered_param_set.append(value[2])
+
         self.ordered_param_set = np.array(self.ordered_param_set)
         R_pp = np.array(R_pp)
 
@@ -83,28 +76,18 @@ class ResonantFrequency:
         plt.show()
         plt.plot(self.ordered_param_set, global_mean_voltages, 'o')
         plt.show()
-        # if self.dispersion:
-            # x_vals = self.ordered_param_set
-            # mx_relation = global_resonant_frequencies[:, 0, 0]  # takes resonant frequency
-            # my_relation = global_resonant_frequencies[:, 1, 0]
-            # mz_relation = global_resonant_frequencies[:, 2, 0]
-            # self.two_parameter_relation(x_vals, global_mean_voltages, title='voltage(scale)')
-            # self.two_parameter_relation(mx_relation, global_mean_voltages, title="mean voltages x")
-            # self.two_parameter_relation(my_relation, global_mean_voltages, title="mean voltages y")
-            # self.two_parameter_relation(mz_relation, global_mean_voltages, title="mean voltages z")
 
-            # self.two_parameter_relation(x_vals, my_relation, title='my relation', xticks=x_vals[::3])
-            # self.two_parameter_relation(x_vals, mz_relation, title='mz relation', xticks=x_vals[::3])
-            # mx_ampl_val = global_resonant_frequencies[:, 0, 1]  # takes resonant frequency amplitude value
-            # my_ampl_val = global_resonant_frequencies[:, 1, 1]
-            # mz_ampl_val = global_resonant_frequencies[:, 2, 1]
-            # self.two_parameter_relation(x_vals, mx_ampl_val, title='mx amplitude (coupl)', xticks=x_vals[::3])
-            # self.two_parameter_relation(x_vals, my_ampl_val, title='my amplitude (coupl)', xticks=x_vals[::3])
-            # self.two_parameter_relation(x_vals, mz_ampl_val, title='mz amplitude (coupl)', xticks=x_vals[::3])
-            # #
-            # # self.two_parameter_relation(mx_relation, mx_ampl_val, title='Resonance x')
-            # # self.two_parameter_relation(my_relation, my_ampl_val, title='Resonance y')
-            # # self.two_parameter_relation(mz_relation, mz_ampl_val, title='Resonance z')
+    def local_analysis(self, filename):
+        param = self.extract_parameter_type(filename, self.param_name)
+        # reads each .odt file and returns pandas DataFrame object
+        df, stages = self.read_directory_as_df_file(filename)
+        # performs specified data analysis
+        shortened_df = self.cutout_sample(df, start_time=self.start_time, stop_time=self.stop_time)
+        rmax = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+        rmin = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+        rdiff = rmax-rmin
+        voltage, m_voltage = self.voltage_calculation(shortened_df)
+        return rdiff, m_voltage, param
 
     def read_directory_as_df_file(self, filename):
         """
@@ -171,7 +154,7 @@ class ResonantFrequency:
         if stop_time is None:
             return data.loc[(data['TimeDriver::Simulation time'] > start_time)]
         else:
-            print("Start time {}, stop time {}".format(start_time, stop_time))
+            # print("Start time {}, stop time {}".format(start_time, stop_time))
             return data.loc[(data['TimeDriver::Simulation time'] >= start_time) &
                             (data['TimeDriver::Simulation time'] < stop_time)]
 
@@ -184,7 +167,7 @@ class ResonantFrequency:
         current = amplitude * np.sin(omega * df_limited['TimeDriver::Simulation time'] + phase)
         voltage = df_limited['MF_Magnetoresistance::magnetoresistance'] * current
         mean_voltage = np.mean(voltage)
-        print("MEAN VOLTAGE {}".format(mean_voltage))
+        # print("MEAN VOLTAGE {}".format(mean_voltage))
         # plt.plot(df_limited['TimeDriver::Simulation time'], voltage)
         # plt.plot(df_limited['TimeDriver::Simulation time'],
         #          np.ones(df_limited['TimeDriver::Simulation time'].shape[0])*mean_voltage)
@@ -276,19 +259,19 @@ class ResonantFrequency:
 
     def extract_parameter_type(self, filename, parameter_name, old_type=False):
         if old_type:
-            base_param = filename.split("\\")
+            base_param = filename.split("/")
             param_value = float(base_param[-2])
-            self.ordered_param_set.append(param_value)
+            return param_value
         else:
             base_param = filename.split(parameter_name + "_")
-            param_value = float(base_param[1].split("\\")[0])
+            param_value = float(base_param[-1].split("/")[0])
             print("ANALYSED PARAM: ", param_value)
-            self.ordered_param_set.append(param_value)
+            return param_value
 
 
 if __name__ == "__main__":
     path = r"D:\Dokumenty\oommf-simulations\REZ\rez_minus1e3\Default\AFCoupFieldDomain.odt"
-    p_dir = r'D:\Dokumenty\oommf-simulations\42_42_yonly'
+    p_dir = r'/home/lemurpwned/Simulations/vsd_56_56_sweep_larger_saving'
     # p_dir = r"D:\Dokumenty\oommf-simulations\coupling_1em4"
     rf = ResonantFrequency(directory=p_dir)
 
