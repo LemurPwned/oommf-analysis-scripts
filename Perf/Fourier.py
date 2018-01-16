@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import glob
 import os
 
+
 class ResonantFrequency:
     def __init__(self, directory):
         self.directory = directory
@@ -53,38 +54,57 @@ class ResonantFrequency:
         file_names = self.search_directory_for_odt()
         self.set_parameters()
         global_resonant_frequencies = []
+        global_mean_voltages = []
+        R_pp = []
         for filename in file_names:
             if self.dispersion: self.extract_parameter_type(filename, self.param_name)
             # reads each .odt file and returns pandas DataFrame object
             df, stages = self.read_directory_as_df_file(filename)
             # performs specified data analysis
-            # self.single_plot_columns(df)
             shortened_df = self.cutout_sample(df, start_time=self.start_time, stop_time=self.stop_time)
-            single_param_resonant_frequencies = self.fourier_analysis(data_frame=shortened_df)
-            # voltage, m_voltage = self.voltage_calculation(shortened_df)
-            global_resonant_frequencies.append(single_param_resonant_frequencies)
-        global_resonant_frequencies = np.array(global_resonant_frequencies)
-        self.ordered_param_set = np.array(self.ordered_param_set)
-        print(global_resonant_frequencies.shape, self.ordered_param_set.shape)
-        print(self.ordered_param_set)
-        if self.dispersion:
-            x_vals = self.ordered_param_set
-            mx_relation = global_resonant_frequencies[:, 0, 0]  # takes resonant frequency
-            my_relation = global_resonant_frequencies[:, 1, 0]
-            mz_relation = global_resonant_frequencies[:, 2, 0]
-            self.two_parameter_relation(x_vals, mx_relation, title='mx relation', xticks=x_vals[::3])
-            self.two_parameter_relation(x_vals, my_relation, title='my relation', xticks=x_vals[::3])
-            self.two_parameter_relation(x_vals, mz_relation, title='mz relation', xticks=x_vals[::3])
-            mx_ampl_val = global_resonant_frequencies[:, 0, 1]  # takes resonant frequency amplitude value
-            my_ampl_val = global_resonant_frequencies[:, 1, 1]
-            mz_ampl_val = global_resonant_frequencies[:, 2, 1]
-            self.two_parameter_relation(x_vals, mx_ampl_val, title='mx amplitude (coupl)', xticks=x_vals[::3])
-            self.two_parameter_relation(x_vals, my_ampl_val, title='my amplitude (coupl)', xticks=x_vals[::3])
-            self.two_parameter_relation(x_vals, mz_ampl_val, title='mz amplitude (coupl)', xticks=x_vals[::3])
+            # self.single_plot_columns(shortened_df, param=self.ordered_param_set[-1])
 
-            self.two_parameter_relation(mx_relation, mx_ampl_val, title='Resonance x')
-            self.two_parameter_relation(my_relation, my_ampl_val, title='Resonance y')
-            self.two_parameter_relation(mz_relation, mz_ampl_val, title='Resonance z')
+            rmax = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+            rmin = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+            R_pp.append(rmax-rmin)
+            # single_param_resonant_frequencies = self.fourier_analysis(data_frame=shortened_df)
+            voltage, m_voltage = self.voltage_calculation(shortened_df)
+            # shortened_df2 = self.cutout_sample(df, start_time=30e-9, stop_time=32e-9)
+            # plt.plot(shortened_df2['MF_Magnetoresistance::magnetoresistance'])
+            # plt.show()
+            # global_resonant_frequencies.append(single_param_resonant_frequencies)
+            global_mean_voltages.append(m_voltage)
+        # global_resonant_frequencies = np.array(global_resonant_frequencies)
+        self.ordered_param_set = np.array(self.ordered_param_set)
+        R_pp = np.array(R_pp)
+
+        plt.plot(self.ordered_param_set, R_pp, 'o')
+        plt.title("R_pp(param)")
+        plt.show()
+        plt.plot(self.ordered_param_set, global_mean_voltages, 'o')
+        plt.show()
+        # if self.dispersion:
+            # x_vals = self.ordered_param_set
+            # mx_relation = global_resonant_frequencies[:, 0, 0]  # takes resonant frequency
+            # my_relation = global_resonant_frequencies[:, 1, 0]
+            # mz_relation = global_resonant_frequencies[:, 2, 0]
+            # self.two_parameter_relation(x_vals, global_mean_voltages, title='voltage(scale)')
+            # self.two_parameter_relation(mx_relation, global_mean_voltages, title="mean voltages x")
+            # self.two_parameter_relation(my_relation, global_mean_voltages, title="mean voltages y")
+            # self.two_parameter_relation(mz_relation, global_mean_voltages, title="mean voltages z")
+
+            # self.two_parameter_relation(x_vals, my_relation, title='my relation', xticks=x_vals[::3])
+            # self.two_parameter_relation(x_vals, mz_relation, title='mz relation', xticks=x_vals[::3])
+            # mx_ampl_val = global_resonant_frequencies[:, 0, 1]  # takes resonant frequency amplitude value
+            # my_ampl_val = global_resonant_frequencies[:, 1, 1]
+            # mz_ampl_val = global_resonant_frequencies[:, 2, 1]
+            # self.two_parameter_relation(x_vals, mx_ampl_val, title='mx amplitude (coupl)', xticks=x_vals[::3])
+            # self.two_parameter_relation(x_vals, my_ampl_val, title='my amplitude (coupl)', xticks=x_vals[::3])
+            # self.two_parameter_relation(x_vals, mz_ampl_val, title='mz amplitude (coupl)', xticks=x_vals[::3])
+            # #
+            # # self.two_parameter_relation(mx_relation, mx_ampl_val, title='Resonance x')
+            # # self.two_parameter_relation(my_relation, my_ampl_val, title='Resonance y')
+            # # self.two_parameter_relation(mz_relation, mz_ampl_val, title='Resonance z')
 
     def read_directory_as_df_file(self, filename):
         """
@@ -155,10 +175,9 @@ class ResonantFrequency:
             return data.loc[(data['TimeDriver::Simulation time'] >= start_time) &
                             (data['TimeDriver::Simulation time'] < stop_time)]
 
-    def voltage_calculation(self, df_limited):
+    def voltage_calculation(self, df_limited, frequency=15.31e9):
         avg_resistance = np.mean(df_limited['MF_Magnetoresistance::magnetoresistance'])
         power = 10e-6
-        frequency = 20e9
         omega = 2 * np.pi * frequency
         phase = 0
         amplitude = np.sqrt(power / avg_resistance)
@@ -166,10 +185,10 @@ class ResonantFrequency:
         voltage = df_limited['MF_Magnetoresistance::magnetoresistance'] * current
         mean_voltage = np.mean(voltage)
         print("MEAN VOLTAGE {}".format(mean_voltage))
-        plt.plot(df_limited['TimeDriver::Simulation time'], voltage)
-        plt.plot(df_limited['TimeDriver::Simulation time'],
-                 np.ones(df_limited['TimeDriver::Simulation time'].shape[0])*mean_voltage)
-        plt.show()
+        # plt.plot(df_limited['TimeDriver::Simulation time'], voltage)
+        # plt.plot(df_limited['TimeDriver::Simulation time'],
+        #          np.ones(df_limited['TimeDriver::Simulation time'].shape[0])*mean_voltage)
+        # plt.show()
         return voltage, mean_voltage
 
     def subplot_fourier(self, fourier_data, time_step=1e-11, titles=None):
@@ -193,8 +212,7 @@ class ResonantFrequency:
 
     def find_max_frequency(self, df, time_step=1e-11, cols=('TimeDriver::mx',
                                                             'TimeDriver::my',
-                                                            'TimeDriv'
-                                                            'er::mz')):
+                                                            'TimeDriver::mz')):
         """
         Values given in columns must have common sampling frequency
         :param df: DataFrame object containing columns specified in cols
@@ -213,7 +231,7 @@ class ResonantFrequency:
             max_val = 0
             max_freq = 0
             for frequency, amp in zip(frequency_steps, freq_data):
-                if amp > max_val and frequency > 0:
+                if np.abs(amp) > max_val and frequency > 0:
                     max_val = amp
                     max_freq = frequency
             print("MAX FREQ: {}, VALUE {}".format(max_freq / 1e9, max_val))
@@ -225,7 +243,7 @@ class ResonantFrequency:
     def single_plot_columns(self, df, x_cols=('TimeDriver::Simulation time',
                                               'TimeDriver::Simulation time'),
                             y_cols=('TimeDriver::my',
-                                    'TimeDriver::mz')):
+                                    'TimeDriver::mz'), param="Unknown"):
         """
         plots a simple column set from a dataframe
         :param df: DataFrame object
@@ -234,12 +252,12 @@ class ResonantFrequency:
         :return: None
         """
         handles = []
-        df = self.cutout_sample(df, start_time=4.9e-9, stop_time=5.6e-9)
+        df = self.cutout_sample(df, start_time=0, stop_time=5.0e9)
         for x_column, y_column in zip(x_cols, y_cols):
             ax, = plt.plot(df[x_column], df[y_column], label=y_column)
             handles.append(ax)
         plt.legend(handles=handles)
-        plt.title("{} vs {}".format(x_cols[0], y_cols[0]))
+        plt.title("{} vs {} for param: {}".format(x_cols[0], y_cols[0], param))
         plt.show()
 
     def two_parameter_relation(self, parameter1, parameter2, xticks=None, title='Dispersion relation'):
@@ -256,28 +274,30 @@ class ResonantFrequency:
         plt.title(title)
         plt.show()
 
-    def extract_parameter_type(self, filename, parameter_name):
-        base_param = filename.split(parameter_name + "_")
-        param_value = float(base_param[1].split("\\")[0])
-        print("ANALYSED PARAM: ", param_value)
-        self.ordered_param_set.append(param_value)
+    def extract_parameter_type(self, filename, parameter_name, old_type=False):
+        if old_type:
+            base_param = filename.split("\\")
+            param_value = float(base_param[-2])
+            self.ordered_param_set.append(param_value)
+        else:
+            base_param = filename.split(parameter_name + "_")
+            param_value = float(base_param[1].split("\\")[0])
+            print("ANALYSED PARAM: ", param_value)
+            self.ordered_param_set.append(param_value)
 
 
 if __name__ == "__main__":
     path = r"D:\Dokumenty\oommf-simulations\REZ\rez_minus1e3\Default\AFCoupFieldDomain.odt"
-    p_dir = r'D:\Dokumenty\oommf-simulations\dispersion_nblc'
-    # p_dir = r"D:\Dokumenty\oommf-simulations\voltage_sweep_50ns"
+    p_dir = r'D:\Dokumenty\oommf-simulations\42_42_yonly'
+    # p_dir = r"D:\Dokumenty\oommf-simulations\coupling_1em4"
     rf = ResonantFrequency(directory=p_dir)
-    param_sweep = np.array([-1e-4, -2e-4, -3e-4, 4e-4, -5e-4, -6e-3, -7e-4, -8e-4, -9e-4, -1e-3, 0,
-                            2e-4, 3e-4, 4e-4, 5e-4, 6e-4, 7e-4,
-                            8e-4, 9e-4, 1e-3])
+
     parameter_dict = {
         "time_step": 1e-11,
         "start_time": 5.2e-9,
-        "stop_time": 10e-9,
-        "param_sweep": param_sweep,
+        "stop_time": 49.01e-9,
         "dispersion": True,
-        "param_name": 'Amp'
+        "param_name": 'scale'
     }
     rf.set_parameters(**parameter_dict)
     rf.initialize_analysis()
