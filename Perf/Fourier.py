@@ -5,6 +5,7 @@ import glob
 import os
 
 from multiprocessing import Pool
+from Interface import asynchronous_pool_order
 
 class ResonantFrequency:
     def __init__(self, directory):
@@ -16,7 +17,8 @@ class ResonantFrequency:
         self.param_sweep = None
         self.dispersion = False
         self.ordered_param_set = []
-
+        self.png = ".png"
+        
     def set_parameters(self, **kwargs):
         """
         :param: **kwargs are the arguments to be passed to the main widget
@@ -58,24 +60,25 @@ class ResonantFrequency:
         self.set_parameters()
         global_mean_voltages = []
         R_pp = []
-        pool = Pool()
-        multiple_results = [pool.apply_async(self.local_analysis,
-                                (filename,)) for filename in file_names]
 
-        for result in multiple_results:
-            value = result.get()
-            R_pp.append(value[0])
-            global_mean_voltages.append(value[1])
-            self.ordered_param_set.append(value[2])
-
+        output = asynchronous_pool_order(self.local_analysis, (), file_names)
+        output = np.array(output)
+        R_pp = output[:, 0]
+        global_mean_voltages = output[:, 1]
+        self.ordered_param_set = output[:, 2]
         self.ordered_param_set = np.array(self.ordered_param_set)
         R_pp = np.array(R_pp)
 
+        fig = plt.figure()
         plt.plot(self.ordered_param_set, R_pp, 'o')
-        plt.title("R_pp(param)")
-        plt.show()
+        fig.suptitle("R_pp(param)", fontsize=12)
+        fig.savefig("Rpp " + str(self.start_time) + " " + str(self.stop_time)
+                        +self.png)
+        fig2 = plt.figure()
         plt.plot(self.ordered_param_set, global_mean_voltages, 'o')
-        plt.show()
+        fig2.suptitle("Voltage(scale)", fontsize=12)
+        fig2.savefig("Vol " + str(self.start_time) + " " + str(self.stop_time)
+                    + self.png)
 
     def local_analysis(self, filename):
         param = self.extract_parameter_type(filename, self.param_name)
@@ -167,11 +170,6 @@ class ResonantFrequency:
         current = amplitude * np.sin(omega * df_limited['TimeDriver::Simulation time'] + phase)
         voltage = df_limited['MF_Magnetoresistance::magnetoresistance'] * current
         mean_voltage = np.mean(voltage)
-        # print("MEAN VOLTAGE {}".format(mean_voltage))
-        # plt.plot(df_limited['TimeDriver::Simulation time'], voltage)
-        # plt.plot(df_limited['TimeDriver::Simulation time'],
-        #          np.ones(df_limited['TimeDriver::Simulation time'].shape[0])*mean_voltage)
-        # plt.show()
         return voltage, mean_voltage
 
     def subplot_fourier(self, fourier_data, time_step=1e-11, titles=None):
@@ -270,17 +268,18 @@ class ResonantFrequency:
 
 
 if __name__ == "__main__":
-    path = r"D:\Dokumenty\oommf-simulations\REZ\rez_minus1e3\Default\AFCoupFieldDomain.odt"
     p_dir = r'/home/lemurpwned/Simulations/vsd_56_56_sweep_larger_saving'
     # p_dir = r"D:\Dokumenty\oommf-simulations\coupling_1em4"
     rf = ResonantFrequency(directory=p_dir)
-
-    parameter_dict = {
-        "time_step": 1e-11,
-        "start_time": 5.2e-9,
-        "stop_time": 49.01e-9,
-        "dispersion": True,
-        "param_name": 'scale'
-    }
-    rf.set_parameters(**parameter_dict)
-    rf.initialize_analysis()
+    for param in [(3.1e-9, 59e-9), (6.1e-9, 59e-9), (9.1e-9, 49e-9),
+                 (25.3e-9, 89e-9), (12.1e-9, 59e-9), (3.2e-9, 59e-9),
+                 (3.2e-9, 58e-9), (3.2e-9, 53e-9)]:
+        parameter_dict = {
+            "time_step": 1e-11,
+            "start_time": param[0],
+            "stop_time": param[1],
+            "dispersion": True,
+            "param_name": 'scale'
+        }
+        rf.set_parameters(**parameter_dict)
+        rf.initialize_analysis()
