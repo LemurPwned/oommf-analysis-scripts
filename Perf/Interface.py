@@ -21,17 +21,18 @@ class Interface:
 
 class ParsingStage:
     def __init__(self, parser):
-        self.available_argument_list = ['example']
+        self.available_argument_list = ['param_sweep_name', 'start_time',
+                                        'stop_time']
         self.default_dict_path = "default_param_set.json"
 
         # immediately read the arguments
         self.resultant_dict = {}
         self.args = parser.parse_args()
         self.args_handler()
-        print(self.resultant_dict)
 
         self.read_json_dict_param(self.default_dict_path)
         print(self.resultant_dict)
+
     def args_handler(self):
         for arg_name in self.available_argument_list:
             if hasattr(self.args, arg_name) is not None:
@@ -43,7 +44,7 @@ class ParsingStage:
     def read_json_dict_param(self, filepath):
         with open(filepath, 'r') as f:
             default_dict = json.loads(f.read())
-            print("READ DICT TYPE {}".format(str(type(default_dict))))
+            print("CORRECT DICT TYPE? {}".format(str(type(default_dict))))
         print(default_dict)
 
         if type(default_dict) != type(self.resultant_dict):
@@ -52,7 +53,7 @@ class ParsingStage:
         elif type(default_dict) != dict:
             raise TypeError("Invalid type of entry")
         # overwrite default dict with dict taken from argparse
-        # this line does it
+        # this line does it, mind the order!
         self.resultant_dict = {**default_dict, **self.resultant_dict}
 
 def asynchronous_pool_order(func, args, object_list):
@@ -71,9 +72,9 @@ if __name__ == "__main__":
         "description": "Allows to perfom analysis on vsd systems",
     }
     arg_list = [{
-        "name": "example",
-        "short": "e",
-        "help": "displays example",
+        "name": "param_sweep_name",
+        "short": "psm",
+        "help": "param to be investigated during sweep",
     }]
     interface = Interface(arg_list)
     ps = ParsingStage(interface.define_input_parameters(**interface_specification))

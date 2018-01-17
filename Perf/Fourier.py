@@ -18,7 +18,7 @@ class ResonantFrequency:
         self.dispersion = False
         self.ordered_param_set = []
         self.png = ".png"
-        
+
     def set_parameters(self, **kwargs):
         """
         :param: **kwargs are the arguments to be passed to the main widget
@@ -255,16 +255,11 @@ class ResonantFrequency:
         plt.title(title)
         plt.show()
 
-    def extract_parameter_type(self, filename, parameter_name, old_type=False):
-        if old_type:
-            base_param = filename.split("/")
-            param_value = float(base_param[-2])
-            return param_value
-        else:
-            base_param = filename.split(parameter_name + "_")
-            param_value = float(base_param[-1].split("/")[0])
-            print("ANALYSED PARAM: ", param_value)
-            return param_value
+    def extract_parameter_type(self, filename, parameter_name):
+        base_param = filename.split(parameter_name + "_")
+        param_value = float(base_param[-1].split("/")[0])
+        print("ANALYSED PARAM: ", param_value)
+        return param_value
 
 
 if __name__ == "__main__":
