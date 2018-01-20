@@ -4,11 +4,14 @@ from multiprocessing import Pool
 import json
 
 class Interface:
-    def __init__(self, arg_list):
-        self.arg_list = arg_list
+    def __init__(self, specification):
+        self.arg_list = specification['specification']
+        self.parsed_args = self.define_input_parameters(specification["name"],
+                                                specification["description"])
+        self.defined_parameters = [x['name'] for x in self.arg_list]
 
-    def define_input_parameters(self, **kwargs):
-        parser = argparse.ArgumentParser(description=kwargs['description'])
+    def define_input_parameters(self, name, desc):
+        parser = argparse.ArgumentParser(description=desc)
         for argument in self.arg_list:
             if "action" in argument.keys():
                 parser.add_argument("-" + argument['short'], "--" + argument['name'],
@@ -16,18 +19,16 @@ class Interface:
             else:
                 parser.add_argument("-"+argument['short'], "--" + argument['name'],
                 help=argument['help'])
-        args = parser.parse_args()
-        return parser
+        return parser.parse_args()
 
 class ParsingStage:
-    def __init__(self, parser):
-        self.available_argument_list = ['param_sweep_name', 'start_time',
-                                        'stop_time']
+    def __init__(self, interface):
+        self.available_argument_list = interface.defined_parameters
         self.default_dict_path = "default_param_set.json"
 
         # immediately read the arguments
         self.resultant_dict = {}
-        self.args = parser.parse_args()
+        self.args = interface.parsed_args
         self.args_handler()
 
         self.read_json_dict_param(self.default_dict_path)
@@ -65,16 +66,3 @@ def asynchronous_pool_order(func, args, object_list):
         value = result.get()
         output_list.append(value)
     return output_list
-
-if __name__ == "__main__":
-    interface_specification = {
-        "name": "Voltage spin-diode analysis module",
-        "description": "Allows to perfom analysis on vsd systems",
-    }
-    arg_list = [{
-        "name": "param_sweep_name",
-        "short": "psm",
-        "help": "param to be investigated during sweep",
-    }]
-    interface = Interface(arg_list)
-    ps = ParsingStage(interface.define_input_parameters(**interface_specification))

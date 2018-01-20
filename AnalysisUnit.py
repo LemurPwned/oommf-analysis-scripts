@@ -1,9 +1,26 @@
 import matplotlib as mpl
 import pandas as pd
+import numpy as np
+import json
+
+from Interface import Interface, ParsingStage
 
 class AnalysisUnit:
-    def __init__(self):
-        pass
+    def __init__(self, filename):
+        specification = self.extract_arguments_from_json(filename)
+        self.set_innner_interface_specification(specification)
+
+    def set_innner_interface_specification(self, specification):
+        inner_interface = Interface(specification)
+        ps = ParsingStage(inner_interface)
+        self.startup_dict = ps.resultant_dict
+        if self.startup_dict is None:
+            raise ValueError("No arguments specified")
+
+    def extract_arguments_from_json(self, filepath):
+        with open(filepath, 'r') as f:
+            spec = json.loads(f.read())
+        return spec
 
     def set_parameters(self, **kwargs):
         """
@@ -24,7 +41,6 @@ class AnalysisUnit:
             object_type.to_pickle(savename + "_series" +
                                     object_type.columns + ".pkl")
         return False
-
 
     def read_directory_as_df_file(self, filename):
         """
@@ -77,5 +93,6 @@ class AnalysisUnit:
             df = pd.DataFrame.from_records(dataset, columns=cols)
             #save dataframe
             stages = len(lines) - 1
-            self.save_object(df, filename.replace(".odt", "stages"))
+            if not self.save_object(df, filename.replace(".odt", "stages")):
+                print("Could not save {}".format(filename))
             return df, stages

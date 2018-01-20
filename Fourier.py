@@ -4,28 +4,23 @@ import matplotlib.pyplot as plt
 import glob
 import os
 
+import csv
 from multiprocessing import Pool
 from Interface import asynchronous_pool_order, Interface, ParsingStage
+from AnalysisUnit import AnalysisUnit
 
-class ResonantFrequency:
-    def __init__(self, directory):
-        self.directory = directory
-        self.start_time = 0
-        self.stop_time = 0
+class ResonantFrequency(AnalysisUnit):
+    def __init__(self, filename):
+        super().__init__(filename)
+        self.set_parameters(**self.startup_dict)
+        if self.directory is None:
+            raise ValueError("Invalid directory ")
         self.analysis_method = self.fourier_analysis
-        self.time_step = 1e-11
         self.param_sweep = None
-        self.dispersion = False
         self.ordered_param_set = []
         self.png = ".png"
 
-    def set_parameters(self, **kwargs):
-        """
-        :param: **kwargs are the arguments to be passed to the main widget
-        iterator
-        """
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        self.initialize_analysis()
 
     def search_directory_for_odt(self):
         """
@@ -66,12 +61,17 @@ class ResonantFrequency:
         R_pp = output[:, 0]
         global_mean_voltages = output[:, 1]
         self.ordered_param_set = output[:, 2]
+
         mean_x = output[:, 3]
         mean_y = output[:, 4]
         mean_z = output[:, 5]
         self.ordered_param_set = np.array(self.ordered_param_set)
         R_pp = np.array(R_pp)
 
+        with open('values.csv', 'w') as f:
+            writer = csv.writer(f, delimiter=',')
+            writer.writerows(zip(R_pp, global_mean_voltages,
+                                self.ordered_param_set))
         fig = plt.figure()
         plt.plot(self.ordered_param_set, R_pp, 'o')
         fig.suptitle("R_pp(param)", fontsize=12)
@@ -98,57 +98,6 @@ class ResonantFrequency:
         mz_avg = np.average(shortened_df['TimeDriver::mz'])
         return rdiff, m_voltage, param, mx_avg, my_avg, mz_avg
 
-    def read_directory_as_df_file(self, filename):
-        """
-        Reads .odt file
-        :param: filename is .odt file path
-        :return: DataFrame and stages number
-        """
-        if filename is None:
-            print("\nOdt file has not been found")
-            return
-        if not filename.endswith(".odt"):
-            print("\nWrong file type passed, only .odt")
-            return
-        else:
-            header_lines = 4
-            header = []
-            i = 0
-            with open(filename, 'r') as f:
-                while i < header_lines:
-                    lines = f.readline()
-                    header.append(lines)
-                    i += 1
-                lines = f.readlines()
-            f.close()
-            cols = header[-1]
-            cols = cols.replace("} ", "")
-            cols = cols.replace("{", "")
-            cols = cols.replace("MF", "Oxs_MF")
-            cols = cols.split("Oxs_")
-            del cols[0]
-            cols = [x.strip() for x in cols]
-            cols = [x.replace("}", "") for x in cols]
-            dataset = []
-            lines = [x.strip() for x in lines]
-            lines = [x.split(' ') for x in lines]
-            for line in lines:
-                temp_line = []
-                for el in line:
-                    try:
-                        new_el = float(el)
-                        temp_line.append(new_el)
-                    except:
-                        pass
-                temp_line = np.array(temp_line, dtype=np.float32)
-                if temp_line.shape[0] == 0:
-                    continue
-                dataset.append(temp_line)
-
-            dataset = np.array(dataset[1:])
-            df = pd.DataFrame.from_records(dataset, columns=cols)
-            stages = len(lines) - 1
-            return df, stages
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):
         """
@@ -270,15 +219,4 @@ class ResonantFrequency:
 
 if __name__ == "__main__":
     p_dir = r'/home/lemurpwned/Simulations/vsd_56_56_sweep_smaller_coup'
-    # p_dir = r"D:\Dokumenty\oommf-simulations\coupling_1em4"
-    rf = ResonantFrequency(directory=p_dir)
-    param = (3.1e-9, 49e-9)
-    parameter_dict = {
-        "time_step": 1e-11,
-        "start_time": param[0],
-        "stop_time": param[1],
-        "dispersion": True,
-        "param_name": 'scale'
-    }
-    rf.set_parameters(**parameter_dict)
-    rf.initialize_analysis()
+    rf = ResonantFrequency("interface.json")
