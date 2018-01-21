@@ -2,7 +2,7 @@
 
 ### REQUIREMENTS 
 * python 3 or newer 
-* all packages from requirements.txt installed for python
+* all packages from requirements.txt installed for python (pip install -r requirements.txt)
 
 ### HOW TO USE 
 * download all the files from the directory, including those ending with .json
