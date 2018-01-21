@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
+import glob
 
 from Interface import Interface, ParsingStage
 
@@ -42,7 +43,21 @@ class AnalysisUnit:
             object_type.to_pickle(savename + "_series" +
                                     object_type.columns + ".pkl")
         return False
-    
+
+    def search_directory_for_odt(self):
+        """
+        finds the possible .odt files in the specified directory
+        :return: None
+        """
+        directory_roots = os.path.join(self.directory, '*/*.odt')
+        filename_candidates = glob.glob(directory_roots, recursive=True)
+        print("{} file candidates found...".format(len(filename_candidates)))
+        if len(filename_candidates) == 0:
+            quit()
+        for filename in filename_candidates:
+            print(filename)
+        return filename_candidates
+
     def read_directory_as_df_file(self, filename):
         """
         Reads .odt file

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import glob
+
 import os
 import csv
 import pickle
@@ -24,20 +24,6 @@ class ResonantFrequency(AnalysisUnit):
         self.png = ".png"
 
         self.initialize_analysis()
-
-    def search_directory_for_odt(self):
-        """
-        finds the possible .odt files in the specified directory
-        :return: None
-        """
-        directory_roots = os.path.join(self.directory, '*/*.odt')
-        filename_candidates = glob.glob(directory_roots, recursive=True)
-        print("{} file candidates found...".format(len(filename_candidates)))
-        if len(filename_candidates) == 0:
-            quit()
-        for filename in filename_candidates:
-            print(filename)
-        return filename_candidates
 
     def fourier_analysis(self, data_frame):
         """
@@ -93,7 +79,7 @@ class ResonantFrequency(AnalysisUnit):
                             filename.replace(".odt", "stages.pkl"))
         if os.path.isfile(picklepath):
             with open(picklepath, 'rb') as f:
-                print("SUCCESS FOUND", picklepath)
+                # print("SUCCESS FOUND", picklepath)
                 df = pickle.load(f)
         else:
             df, stages = self.read_directory_as_df_file(filename)
@@ -117,7 +103,6 @@ class ResonantFrequency(AnalysisUnit):
         :param stop_time:  stop time = here cutout ends
         :return: sliced DataFrame object
         """
-        print(start_time, stop_time)
         if start_time is None:
             return data
         if stop_time is None:
@@ -184,7 +169,6 @@ class ResonantFrequency(AnalysisUnit):
             print("MAX FREQ: {}, VALUE {}".format(max_freq / 1e9, max_val))
             max_freq_set.append([max_freq / 1e9, max_val])
         # display Fourier
-        # self.subplot_fourier(potential_fourier_data, time_step=time_step, titles=cols)
         return np.array(max_freq_set, dtype=np.float64)
 
     def single_plot_columns(self, df, x_cols=('TimeDriver::Simulation time',
