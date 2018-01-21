@@ -5,27 +5,32 @@
       {
           "name": "directory",
           "short": "d",
-          "help": "directory to be investigated"
+          "help": "directory to be investigated",
+          "type": "str"
       },
       {
           "name": "param_sweep_name",
           "short": "psm",
-          "help": "param to be investigated during sweep"
+          "help": "param to be investigated during sweep",
+          "type": "str"
       },
       {
           "name": "time_step",
           "short": "ts",
-          "help": "sampling rate"
+          "help": "sampling rate",
+          "type": "float"
       },
       {
           "name": "start_time",
           "short": "tstart",
-          "help": "starts investigation of data from tstart"
+          "help": "starts investigation of data from tstart",
+          "type": "float"
       },
       {
           "name": "stop_time",
           "short": "tstop",
-          "help": "stops investigation of data at tstop"
+          "help": "stops investigation of data at tstop",
+          "type": "float"
       }
     ]
 }

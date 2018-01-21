@@ -15,6 +15,7 @@ class ResonantFrequency(AnalysisUnit):
         self.set_parameters(**self.startup_dict)
         if self.directory is None:
             raise ValueError("Invalid directory ")
+        print("FINAL VALUES: {}".format(self.startup_dict))
         self.analysis_method = self.fourier_analysis
         self.param_sweep = None
         self.ordered_param_set = []
@@ -107,6 +108,7 @@ class ResonantFrequency(AnalysisUnit):
         :param stop_time:  stop time = here cutout ends
         :return: sliced DataFrame object
         """
+        print(start_time, stop_time)
         if start_time is None:
             return data
         if stop_time is None:

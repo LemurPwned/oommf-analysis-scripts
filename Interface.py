@@ -15,11 +15,23 @@ class Interface:
         for argument in self.arg_list:
             if "action" in argument.keys():
                 parser.add_argument("-" + argument['short'], "--" + argument['name'],
-                help=argument['help'], action=argument['action'])
+                help=argument['help'], action=argument['action'],
+                type=self.decode_type(argument['type']))
             else:
                 parser.add_argument("-"+argument['short'], "--" + argument['name'],
-                help=argument['help'])
+                help=argument['help'],
+                type=self.decode_type(argument['type']))
         return parser.parse_args()
+
+    def decode_type(self, type_str):
+        if type_str == "str":
+            return str
+        elif type_str == "int":
+            return int
+        elif type_str == "float":
+            return float
+        elif type_str == "bool":
+            return bool
 
 class ParsingStage:
     def __init__(self, interface):
