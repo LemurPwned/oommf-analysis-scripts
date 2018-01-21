@@ -44,12 +44,14 @@ class ParsingStage:
         self.args_handler()
 
         self.read_json_dict_param(self.default_dict_path)
-        print(self.resultant_dict)
 
     def args_handler(self):
         for arg_name in self.available_argument_list:
-            if hasattr(self.args, arg_name) is not None:
-                self.set_dict_param(arg_name, getattr(self.args, arg_name))
+            try:
+                if getattr(self.args, arg_name) is not None:
+                    self.set_dict_param(arg_name, getattr(self.args, arg_name))
+            except TypeError:
+                print("ASKED FOR NON_EXISTENT VALUE {}".format(arg_name))
 
     def set_dict_param(self, param_name, param_val):
         self.resultant_dict[param_name] = param_val
@@ -58,7 +60,7 @@ class ParsingStage:
         with open(filepath, 'r') as f:
             default_dict = json.loads(f.read())
             print("CORRECT DICT TYPE? {}".format(str(type(default_dict))))
-        print(default_dict)
+        print("DEFAULT DICTIOANRY PARAMS DETECTED...\n{}".format(default_dict))
 
         if type(default_dict) != type(self.resultant_dict):
             msg = "Dictionary mismatch of types"

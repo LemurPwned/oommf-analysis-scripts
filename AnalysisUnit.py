@@ -2,6 +2,7 @@ import matplotlib as mpl
 import pandas as pd
 import numpy as np
 import json
+import os
 
 from Interface import Interface, ParsingStage
 
@@ -41,7 +42,7 @@ class AnalysisUnit:
             object_type.to_pickle(savename + "_series" +
                                     object_type.columns + ".pkl")
         return False
-
+    
     def read_directory_as_df_file(self, filename):
         """
         Reads .odt file

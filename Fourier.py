@@ -3,9 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import glob
 import os
-
 import csv
+import pickle
+
 from multiprocessing import Pool
+
 from Interface import asynchronous_pool_order, Interface, ParsingStage
 from AnalysisUnit import AnalysisUnit
 
@@ -87,7 +89,14 @@ class ResonantFrequency(AnalysisUnit):
     def local_analysis(self, filename):
         param = self.extract_parameter_type(filename, self.param_name)
         # reads each .odt file and returns pandas DataFrame object
-        df, stages = self.read_directory_as_df_file(filename)
+        picklepath = os.path.join(os.path.basename(filename),
+                            filename.replace(".odt", "stages.pkl"))
+        if os.path.isfile(picklepath):
+            with open(picklepath, 'rb') as f:
+                print("SUCCESS FOUND", picklepath)
+                df = pickle.load(f)
+        else:
+            df, stages = self.read_directory_as_df_file(filename)
         # performs specified data analysis
         shortened_df = self.cutout_sample(df, start_time=self.start_time, stop_time=self.stop_time)
         rmax = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
