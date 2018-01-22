@@ -51,9 +51,6 @@ class ResonantFrequency(AnalysisUnit):
         global_mean_voltages = output[:, 1]
         self.ordered_param_set = output[:, 2]
 
-        mean_x = output[:, 3]
-        mean_y = output[:, 4]
-        mean_z = output[:, 5]
         self.ordered_param_set = np.array(self.ordered_param_set)
         R_pp = np.array(R_pp)
 
@@ -64,13 +61,18 @@ class ResonantFrequency(AnalysisUnit):
         fig = plt.figure()
         plt.plot(self.ordered_param_set, R_pp, 'o')
         fig.suptitle("R_pp(param)", fontsize=12)
-        fig.savefig("Rpp " + str(self.start_time) + " " + str(self.stop_time)
-                        +self.png)
+
+        savename = "Rpp " + str(self.start_time) + " " + str(self.stop_time) \
+                        +self.png
+        self.save_object(fig, savename)
+
         fig2 = plt.figure()
         plt.plot(self.ordered_param_set, global_mean_voltages, 'o')
         fig2.suptitle("Voltage(scale)", fontsize=12)
-        fig2.savefig("Vol " + str(self.start_time) + " " + str(self.stop_time)
-                    + self.png)
+
+        savename = "Vol " + str(self.start_time) + " " + str(self.stop_time) \
+                    + self.png
+        self.save_object(fig2, savename)
 
     def local_analysis(self, filename):
         param = self.extract_parameter_type(filename, self.param_name)
@@ -89,10 +91,8 @@ class ResonantFrequency(AnalysisUnit):
         rmin = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
         rdiff = rmax-rmin
         voltage, m_voltage = self.voltage_calculation(shortened_df)
-        mx_avg = np.average(shortened_df['TimeDriver::mx'])
-        my_avg = np.average(shortened_df['TimeDriver::my'])
-        mz_avg = np.average(shortened_df['TimeDriver::mz'])
-        return rdiff, m_voltage, param, mx_avg, my_avg, mz_avg
+
+        return rdiff, m_voltage, param
 
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):

@@ -40,7 +40,7 @@ class AnalysisUnit:
             object_type.to_pickle(savename + '.pkl')
             return True
         elif type(object_type) == pd.Series:
-            object_type.to_pickle(savename + "_series" +
+            object_type.to_pickle(savename + "_series" + \
                                     object_type.columns + ".pkl")
         return False
 
