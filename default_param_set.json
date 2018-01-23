@@ -1,6 +1,6 @@
 {
   "dispersion": true,
-  "start_time": 3e-9,
+  "start_time": 5.3e-9,
   "stop_time": 48e-9,
   "time_step": 1e-11,
   "param_name": "scale"

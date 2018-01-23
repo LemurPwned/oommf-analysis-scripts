@@ -9,8 +9,8 @@
           "type": "str"
       },
       {
-          "name": "param_sweep_name",
-          "short": "psm",
+          "name": "param_name",
+          "short": "pn",
           "help": "param to be investigated during sweep",
           "type": "str"
       },
@@ -31,6 +31,12 @@
           "short": "tstop",
           "help": "stops investigation of data at tstop",
           "type": "float"
+      },
+      {
+        "name": "dispersion",
+        "short": "disp",
+        "help": "dispersion analysis enable",
+        "type": "bool"
       }
     ]
 }

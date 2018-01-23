@@ -42,24 +42,33 @@ class ResonantFrequency(AnalysisUnit):
         # ask for all .odt files in the sub-roots of a specified directory
         file_names = self.search_directory_for_odt()
         self.set_parameters()
-        global_mean_voltages = []
-        R_pp = []
 
         output = asynchronous_pool_order(self.local_analysis, (), file_names)
         output = np.array(output)
-        R_pp = output[:, 0]
-        global_mean_voltages = output[:, 1]
+        self.R_pp = output[:, 0]
+        self.global_mean_voltages = output[:, 1]
         self.ordered_param_set = output[:, 2]
+        self.global_frequency_set = output[:, 3:]
+        print(self.global_frequency_set.shape)
+        if self.dispersion:
+            self.dispersion_module()
+        else:
+            self.resonance_peak_module()
 
-        self.ordered_param_set = np.array(self.ordered_param_set)
-        R_pp = np.array(R_pp)
+    def dispersion_module(self):
+        for i, vector_orientation in enumerate(['mx', 'my', 'mz']):
+            fig = plt.figure()
+            plt.plot(self.ordered_param_set, self.global_frequency_set[:,0], 'o')
+            fig.suptitle(vector_orientation, fontsize=12)
 
-        with open('values.csv', 'w') as f:
-            writer = csv.writer(f, delimiter=',')
-            writer.writerows(zip(R_pp, global_mean_voltages,
-                                self.ordered_param_set))
+            savename = vector_orientation + str(self.start_time) + " " + \
+                        str(self.stop_time) + self.png
+            self.save_object(fig, savename)
+            # plt.clf()
+
+    def resonance_peak_module(self):
         fig = plt.figure()
-        plt.plot(self.ordered_param_set, R_pp, 'o')
+        plt.plot(self.ordered_param_set, self.R_pp, 'o')
         fig.suptitle("R_pp(param)", fontsize=12)
 
         savename = "Rpp " + str(self.start_time) + " " + str(self.stop_time) \
@@ -67,7 +76,7 @@ class ResonantFrequency(AnalysisUnit):
         self.save_object(fig, savename)
 
         fig2 = plt.figure()
-        plt.plot(self.ordered_param_set, global_mean_voltages, 'o')
+        plt.plot(self.ordered_param_set, self.global_mean_voltages, 'o')
         fig2.suptitle("Voltage(scale)", fontsize=12)
 
         savename = "Vol " + str(self.start_time) + " " + str(self.stop_time) \
@@ -81,7 +90,6 @@ class ResonantFrequency(AnalysisUnit):
                             filename.replace(".odt", "stages.pkl"))
         if os.path.isfile(picklepath):
             with open(picklepath, 'rb') as f:
-                # print("SUCCESS FOUND", picklepath)
                 df = pickle.load(f)
         else:
             df, stages = self.read_directory_as_df_file(filename)
@@ -91,8 +99,9 @@ class ResonantFrequency(AnalysisUnit):
         rmin = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
         rdiff = rmax-rmin
         voltage, m_voltage = self.voltage_calculation(shortened_df)
-
-        return rdiff, m_voltage, param
+        frequency_set = self.find_max_frequency(shortened_df, self.time_step)
+        mx, my, mz = frequency_set[:,0]
+        return rdiff, m_voltage, param, mx, my, mz
 
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):
