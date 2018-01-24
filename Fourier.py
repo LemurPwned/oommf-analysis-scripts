@@ -58,13 +58,16 @@ class ResonantFrequency(AnalysisUnit):
     def dispersion_module(self):
         for i, vector_orientation in enumerate(['mx', 'my', 'mz']):
             fig = plt.figure()
-            plt.plot(self.ordered_param_set, self.global_frequency_set[:,0], 'o')
+            plt.plot(self.ordered_param_set, self.global_frequency_set[:,i], 'o')
             fig.suptitle(vector_orientation, fontsize=12)
 
             savename = vector_orientation + str(self.start_time) + " " + \
                         str(self.stop_time) + self.png
             self.save_object(fig, savename)
-            # plt.clf()
+        with open("resonant_frequencies.csv", 'w') as f:
+            writer = csv.writer(f, delimiter=',')
+            writer.writerows(zip(self.ordered_param_set,
+                                    self.global_frequency_set[:,0:]))
 
     def resonance_peak_module(self):
         fig = plt.figure()
@@ -217,7 +220,6 @@ class ResonantFrequency(AnalysisUnit):
     def extract_parameter_type(self, filename, parameter_name):
         base_param = filename.split(parameter_name + "_")
         param_value = float(base_param[-1].split("/")[0])
-        print("ANALYSED PARAM: ", param_value)
         return param_value
 
 
