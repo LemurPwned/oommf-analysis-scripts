@@ -37,6 +37,13 @@
         "short": "disp",
         "help": "dispersion analysis enable",
         "type": "bool"
+      },
+      {
+        "name": "view",
+        "short": "v",
+        "help": "view current default_dict",
+        "type": "bool",
+        "action": "store_true"
       }
     ]
 }

@@ -1,5 +1,5 @@
 {
-  "dispersion": true,
+  "dispersion": false,
   "start_time": 5.3e-9,
   "stop_time": 48e-9,
   "time_step": 1e-11,

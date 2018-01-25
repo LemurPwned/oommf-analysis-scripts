@@ -15,8 +15,7 @@ class Interface:
         for argument in self.arg_list:
             if "action" in argument.keys():
                 parser.add_argument("-" + argument['short'], "--" + argument['name'],
-                help=argument['help'], action=argument['action'],
-                type=self.decode_type(argument['type']))
+                help=argument['help'], action=argument['action'])
             else:
                 parser.add_argument("-"+argument['short'], "--" + argument['name'],
                 help=argument['help'],
@@ -67,6 +66,9 @@ class ParsingStage:
             raise TypeError(msg)
         elif type(default_dict) != dict:
             raise TypeError("Invalid type of entry")
+
+        if self.resultant_dict["view"]:
+            quit()
         # overwrite default dict with dict taken from argparse
         # this line does it, mind the order!
         self.resultant_dict = {**default_dict, **self.resultant_dict}

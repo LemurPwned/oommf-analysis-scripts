@@ -178,7 +178,7 @@ class ResonantFrequency(AnalysisUnit):
                 if np.abs(amp) > max_val and frequency > 0:
                     max_val = amp
                     max_freq = frequency
-            print("MAX FREQ: {}, VALUE {}".format(max_freq / 1e9, max_val))
+            # print("MAX FREQ: {}, VALUE {}".format(max_freq / 1e9, max_val))
             max_freq_set.append([max_freq / 1e9, max_val])
         # display Fourier
         return np.array(max_freq_set, dtype=np.float64)
