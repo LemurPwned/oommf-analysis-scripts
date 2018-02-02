@@ -106,6 +106,8 @@ class ResonantFrequency(AnalysisUnit):
         mx, my, mz = frequency_set[:,0]
         return rdiff, m_voltage, param, mx, my, mz
 
+    def multiple_parameter_analysis(self, filename):
+        parmas = self.extract_parameter_type_dual_params(filename)
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):
         """
@@ -222,6 +224,15 @@ class ResonantFrequency(AnalysisUnit):
         param_value = float(base_param[-1].split("/")[0])
         return param_value
 
+    def extract_parameter_type_dual_params(self, filename):
+        # extract top-level directory
+        filename = os.path.dirname(filename).split("/")[-1]
+
+        # extract two param_set
+        base_params = filename.split("_")
+        base_param1 = (base_params[0], base_params[1])
+        base_param2 = (base_params[2], base_params[3])
+        return base_param1, base_param2
 
 if __name__ == "__main__":
     p_dir = r'/home/lemurpwned/Simulations/vsd_56_56_sweep_smaller_coup'
