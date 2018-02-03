@@ -23,6 +23,8 @@ class ResonantFrequency(AnalysisUnit):
         self.ordered_param_set = []
         self.png = ".png"
 
+        self.resonant = 7.66e9
+
         self.initialize_analysis()
 
     def fourier_analysis(self, data_frame):
@@ -61,8 +63,8 @@ class ResonantFrequency(AnalysisUnit):
             plt.plot(self.ordered_param_set, self.global_frequency_set[:,i], 'o')
             fig.suptitle(vector_orientation, fontsize=12)
 
-            savename = vector_orientation + str(self.start_time) + " " + \
-                        str(self.stop_time) + self.png
+            savename = vector_orientation + str(self.start_time) + " " +
+                        str(self.stop_time)
             self.save_object(fig, savename)
         with open("resonant_frequencies.csv", 'w') as f:
             writer = csv.writer(f, delimiter=',')
@@ -74,16 +76,14 @@ class ResonantFrequency(AnalysisUnit):
         plt.plot(self.ordered_param_set, self.R_pp, 'o')
         fig.suptitle("R_pp(param)", fontsize=12)
 
-        savename = "Rpp " + str(self.start_time) + " " + str(self.stop_time) \
-                        +self.png
+        savename = "Rpp " + str(self.start_time) + " " + str(self.stop_time)
         self.save_object(fig, savename)
 
         fig2 = plt.figure()
         plt.plot(self.ordered_param_set, self.global_mean_voltages, 'o')
         fig2.suptitle("Voltage(scale)", fontsize=12)
 
-        savename = "Vol " + str(self.start_time) + " " + str(self.stop_time) \
-                    + self.png
+        savename = "Vol " + str(self.start_time) + " " + str(self.stop_time)
         self.save_object(fig2, savename)
 
     def local_analysis(self, filename):
@@ -101,7 +101,7 @@ class ResonantFrequency(AnalysisUnit):
         rmax = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
         rmin = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
         rdiff = rmax-rmin
-        voltage, m_voltage = self.voltage_calculation(shortened_df)
+        voltage, m_voltage = self.voltage_calculation(shortened_df, self.resonant)
         frequency_set = self.find_max_frequency(shortened_df, self.time_step)
         mx, my, mz = frequency_set[:,0]
         return rdiff, m_voltage, param, mx, my, mz
@@ -126,13 +126,13 @@ class ResonantFrequency(AnalysisUnit):
             return data.loc[(data['TimeDriver::Simulation time'] >= start_time) &
                             (data['TimeDriver::Simulation time'] < stop_time)]
 
-    def voltage_calculation(self, df_limited, frequency=15.31e9):
+    def voltage_calculation(self, df_limited, frequency):
         avg_resistance = np.mean(df_limited['MF_Magnetoresistance::magnetoresistance'])
         power = 10e-6
         omega = 2 * np.pi * frequency
         phase = 0
         amplitude = np.sqrt(power / avg_resistance)
-        current = amplitude * np.sin(omega * df_limited['TimeDriver::Simulation time'] + phase)
+        current = amplitude * np.sin(omega * df_limited['qi::Simulation time'] + phase)
         voltage = df_limited['MF_Magnetoresistance::magnetoresistance'] * current
         mean_voltage = np.mean(voltage)
         return voltage, mean_voltage
