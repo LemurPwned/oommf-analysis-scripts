@@ -15,7 +15,7 @@ class PandasCLI:
             this_folder = os.path.curdir()
         else:
             this_folder = self.directory
-        possible_pickles = glob.glob(os.path.join(this_folder, "*.pkl"))
+        possible_pickles = glob.glob(os.path.join(this_folder, "*/*.pkl"))
         if possible_pickles is not None:
             try:
                 selected = self.numbered_display(possible_pickles)
@@ -25,15 +25,19 @@ class PandasCLI:
             self.accept_pickle(selected)
 
     def query_loop(self):
-        selected_column = self.numbered_display(self.df.columns)
-        self.plotting_module(selected_column)
+        while(True):
+            selected_column = self.numbered_display(self.df.columns)
+            self.plotting_module(selected_column)
 
     def numbered_display(self, array):
         max_i = len(array)
         for i, element in enumerate(array):
             cli_string = str(i+1) + ") " + element
             print(cli_string)
+        print("q) QUIT")
         number = input("\nPlease select an option\n")
+        if number == "q":
+            quit()
         number = int(number)
         if number > max_i:
             raise ValueError("Invalid number")
@@ -50,6 +54,6 @@ class PandasCLI:
 
 
 if __name__ == "__main__":
-    directory = "E:\scale_0.9"
+    directory = "/home/lemurpwned/Simulations/0_1_0_0_sweep/"
     pandas_cli = PandasCLI(directory=directory)
     pandas_cli.run_in_folder()

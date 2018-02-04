@@ -23,7 +23,7 @@ class ResonantFrequency(AnalysisUnit):
         self.ordered_param_set = []
         self.png = ".png"
 
-        self.resonant = 7.66e9
+        self.resonant = 7.56e9
 
         self.initialize_analysis()
 
@@ -63,7 +63,7 @@ class ResonantFrequency(AnalysisUnit):
             plt.plot(self.ordered_param_set, self.global_frequency_set[:,i], 'o')
             fig.suptitle(vector_orientation, fontsize=12)
 
-            savename = vector_orientation + str(self.start_time) + " " +
+            savename = vector_orientation + str(self.start_time) + " " + \
                         str(self.stop_time)
             self.save_object(fig, savename)
         with open("resonant_frequencies.csv", 'w') as f:
@@ -132,7 +132,7 @@ class ResonantFrequency(AnalysisUnit):
         omega = 2 * np.pi * frequency
         phase = 0
         amplitude = np.sqrt(power / avg_resistance)
-        current = amplitude * np.sin(omega * df_limited['qi::Simulation time'] + phase)
+        current = amplitude * np.sin(omega * df_limited['TimeDriver::Simulation time'] + phase)
         voltage = df_limited['MF_Magnetoresistance::magnetoresistance'] * current
         mean_voltage = np.mean(voltage)
         return voltage, mean_voltage
