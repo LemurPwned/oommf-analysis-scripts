@@ -1,30 +1,43 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
-import os
+import os, sys
 import csv
 import pickle
 
-from multiprocessing import Pool
-
-from Interface import asynchronous_pool_order, Interface, ParsingStage
+from Interface import asynchronous_pool_order
 from AnalysisUnit import AnalysisUnit
+
 
 class ResonantFrequency(AnalysisUnit):
     def __init__(self, filename):
         super().__init__(filename)
+        self.clear = False
+        self.directory = None
+        self.time_step = None
+        self.start_time = None
+        self.stop_time = None
+        self.R_pp = None
+        self.global_mean_voltages = None
+        self.global_frequency_set = None
+        self.dispersion = None
+        self.param_name = None
+        self.resonant_frequency = None
+
         self.set_parameters(**self.startup_dict)
         if self.directory is None:
             raise ValueError("Invalid directory ")
+        else:
+            # prepare resulting directory
+            self.result_directory = self.manage_directory(self.directory)
         print("FINAL VALUES: {}".format(self.startup_dict))
         self.analysis_method = self.fourier_analysis
         self.param_sweep = None
         self.ordered_param_set = []
         self.png = ".png"
 
-        self.resonant = 7.56e9
-
+        self.os_type = "windows" if "win" in sys.platform else "linux"
+        self.delimiter = "/" if self.os_type == "linux" else "\\"
         self.initialize_analysis()
 
     def fourier_analysis(self, data_frame):
@@ -51,7 +64,7 @@ class ResonantFrequency(AnalysisUnit):
         self.global_mean_voltages = output[:, 1]
         self.ordered_param_set = output[:, 2]
         self.global_frequency_set = output[:, 3:]
-        print(self.global_frequency_set.shape)
+
         if self.dispersion:
             self.dispersion_module()
         else:
@@ -60,13 +73,14 @@ class ResonantFrequency(AnalysisUnit):
     def dispersion_module(self):
         for i, vector_orientation in enumerate(['mx', 'my', 'mz']):
             fig = plt.figure()
-            plt.plot(self.ordered_param_set, self.global_frequency_set[:,i], 'o')
+            plt.plot(self.ordered_param_set, self.global_frequency_set[:, i], 'o')
             fig.suptitle(vector_orientation, fontsize=12)
-
             savename = vector_orientation + str(self.start_time) + " " + \
-                        str(self.stop_time)
+                       str(self.stop_time)
+            savename = os.path.join(self.result_directory, savename)
             self.save_object(fig, savename)
-        with open("resonant_frequencies.csv", 'w') as f:
+        res_savepoint = os.path.join(self.result_directory, "resonant_frequencies.csv")
+        with open(res_savepoint, 'w') as f:
             writer = csv.writer(f, delimiter=',')
             writer.writerows(zip(self.ordered_param_set,
                                     self.global_frequency_set[:,0:]))
@@ -90,8 +104,8 @@ class ResonantFrequency(AnalysisUnit):
         param = self.extract_parameter_type(filename, self.param_name)
         # reads each .odt file and returns pandas DataFrame object
         picklepath = os.path.join(os.path.basename(filename),
-                            filename.replace(".odt", "stages.pkl"))
-        if os.path.isfile(picklepath):
+                                  filename.replace(".odt", "stages.pkl"))
+        if os.path.isfile(picklepath) and not self.clear:
             with open(picklepath, 'rb') as f:
                 df = pickle.load(f)
         else:
@@ -101,13 +115,14 @@ class ResonantFrequency(AnalysisUnit):
         rmax = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
         rmin = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
         rdiff = rmax-rmin
-        voltage, m_voltage = self.voltage_calculation(shortened_df, self.resonant)
+        voltage, m_voltage = self.voltage_calculation(shortened_df, self.resonant_frequency)
         frequency_set = self.find_max_frequency(shortened_df, self.time_step)
-        mx, my, mz = frequency_set[:,0]
+        mx, my, mz = frequency_set[:, 0]
         return rdiff, m_voltage, param, mx, my, mz
 
     def multiple_parameter_analysis(self, filename):
-        parmas = self.extract_parameter_type_dual_params(filename)
+        params = self.extract_parameter_type_dual_params(filename)
+        return params
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):
         """
@@ -188,12 +203,14 @@ class ResonantFrequency(AnalysisUnit):
     def single_plot_columns(self, df, x_cols=('TimeDriver::Simulation time',
                                               'TimeDriver::Simulation time'),
                             y_cols=('TimeDriver::my',
-                                    'TimeDriver::mz'), param="Unknown"):
+                                    'TimeDriver::mz'),
+                            param="Unknown"):
         """
-        plots a simple column set from a dataframe
+        plots a simple column set from a data frame
         :param df: DataFrame object
         :param x_cols: x-columns from df to be plotted on x-axis
         :param y_cols: y-columns from df to be plotted on y=axis
+        :param param: is sweep-type
         :return: None
         """
         handles = []
@@ -221,12 +238,12 @@ class ResonantFrequency(AnalysisUnit):
 
     def extract_parameter_type(self, filename, parameter_name):
         base_param = filename.split(parameter_name + "_")
-        param_value = float(base_param[-1].split("/")[0])
+        param_value = float(base_param[-1].split(self.delimiter)[0])
         return param_value
 
     def extract_parameter_type_dual_params(self, filename):
         # extract top-level directory
-        filename = os.path.dirname(filename).split("/")[-1]
+        filename = os.path.dirname(filename).split(self.delimiter)[-1]
 
         # extract two param_set
         base_params = filename.split("_")
@@ -234,6 +251,6 @@ class ResonantFrequency(AnalysisUnit):
         base_param2 = (base_params[2], base_params[3])
         return base_param1, base_param2
 
+
 if __name__ == "__main__":
-    p_dir = r'/home/lemurpwned/Simulations/vsd_56_56_sweep_smaller_coup'
     rf = ResonantFrequency("interface.json")

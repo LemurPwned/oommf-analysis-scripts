@@ -7,12 +7,15 @@ import glob
 
 from Interface import Interface, ParsingStage
 
+
 class AnalysisUnit:
     def __init__(self, filename):
+        self.startup_dict = None
+        self.directory = None
         specification = self.extract_arguments_from_json(filename)
-        self.set_innner_interface_specification(specification)
+        self.set_inner_interface_specification(specification)
 
-    def set_innner_interface_specification(self, specification):
+    def set_inner_interface_specification(self, specification):
         inner_interface = Interface(specification)
         ps = ParsingStage(inner_interface)
         self.startup_dict = ps.resultant_dict
@@ -33,6 +36,7 @@ class AnalysisUnit:
             setattr(self, k, v)
 
     def save_object(self, object_type, savename):
+        print("SAVING IN: {}".format(savename))
         if type(object_type) == mpl.figure.Figure:
             object_type.savefig(savename + '.png')
             return True
@@ -40,9 +44,18 @@ class AnalysisUnit:
             object_type.to_pickle(savename + '.pkl')
             return True
         elif type(object_type) == pd.Series:
-            object_type.to_pickle(savename + "_series" + \
-                                    object_type.columns + ".pkl")
+            object_type.to_pickle(savename + "_series" +
+                                  object_type.columns + ".pkl")
         return False
+
+    def manage_directory(self, dir_name):
+        result_directory = os.path.join(dir_name, "Results")
+        if os.path.isdir(result_directory):
+            print("DETECTED ALREADY EXISTING DIRECTORY, SKIPPING...")
+            return result_directory
+        else:
+            os.mkdir(result_directory)
+            return result_directory
 
     def search_directory_for_odt(self):
         """
@@ -107,7 +120,7 @@ class AnalysisUnit:
 
             dataset = np.array(dataset[1:])
             df = pd.DataFrame.from_records(dataset, columns=cols)
-            #save dataframe
+            # save data frame
             stages = len(lines) - 1
             if not self.save_object(df, filename.replace(".odt", "stages")):
                 print("Could not save {}".format(filename))

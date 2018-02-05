@@ -1,6 +1,6 @@
 {
   "name": "Voltage spin-diode frequency analysis module",
-  "description": "Allows to perfom analysis on vsd systems",
+  "description": "Allows to perform analysis on vsd systems",
   "specification": [
       {
           "name": "directory",
@@ -13,6 +13,12 @@
           "short": "pn",
           "help": "param to be investigated during sweep",
           "type": "str"
+      },
+      {
+        "name": "resonant_frequency",
+        "short": "rf",
+        "help": "sets resonant frequency",
+        "type": "float"
       },
       {
           "name": "time_step",
@@ -36,7 +42,8 @@
         "name": "dispersion",
         "short": "disp",
         "help": "dispersion analysis enable",
-        "type": "bool"
+        "type": "bool",
+        "action": "store_true"
       },
       {
         "name": "view",
@@ -44,6 +51,13 @@
         "help": "view current default_dict",
         "type": "bool",
         "action": "store_true"
+      },
+      {
+        "name": "clear",
+        "short": "c",
+        "help": "ignores saved objects and overwrites them",
+        "type": "bool",
+        "action": "store_false"
       }
     ]
 }

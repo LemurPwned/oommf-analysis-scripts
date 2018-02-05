@@ -1,25 +1,24 @@
 import argparse
-
-from multiprocessing import Pool
 import json
+from multiprocessing import Pool
+
 
 class Interface:
     def __init__(self, specification):
         self.arg_list = specification['specification']
-        self.parsed_args = self.define_input_parameters(specification["name"],
-                                                specification["description"])
+        self.parsed_args = self.define_input_parameters(specification["description"])
         self.defined_parameters = [x['name'] for x in self.arg_list]
 
-    def define_input_parameters(self, name, desc):
+    def define_input_parameters(self, desc):
         parser = argparse.ArgumentParser(description=desc)
         for argument in self.arg_list:
             if "action" in argument.keys():
                 parser.add_argument("-" + argument['short'], "--" + argument['name'],
-                help=argument['help'], action=argument['action'])
+                                    help=argument['help'], action=argument['action'])
             else:
                 parser.add_argument("-"+argument['short'], "--" + argument['name'],
-                help=argument['help'],
-                type=self.decode_type(argument['type']))
+                                    help=argument['help'],
+                                    type=self.decode_type(argument['type']))
         return parser.parse_args()
 
     def decode_type(self, type_str):
@@ -31,6 +30,7 @@ class Interface:
             return float
         elif type_str == "bool":
             return bool
+
 
 class ParsingStage:
     def __init__(self, interface):
@@ -59,9 +59,10 @@ class ParsingStage:
         with open(filepath, 'r') as f:
             default_dict = json.loads(f.read())
             print("CORRECT DICT TYPE? {}".format(str(type(default_dict))))
-        print("DEFAULT DICTIOANRY PARAMS DETECTED...\n{}".format(default_dict))
+        print("DEFAULT DICTIONARY PARAMS DETECTED...\n{}".format(default_dict))
 
-        if type(default_dict) != type(self.resultant_dict):
+        if (not isinstance(default_dict, dict)) or \
+                (not isinstance(self.resultant_dict, dict)):
             msg = "Dictionary mismatch of types"
             raise TypeError(msg)
         elif type(default_dict) != dict:
@@ -69,9 +70,10 @@ class ParsingStage:
 
         if self.resultant_dict["view"]:
             quit()
-        # overwrite default dict with dict taken from argparse
+        # overwrite default dict with dict taken from arg parse
         # this line does it, mind the order!
         self.resultant_dict = {**default_dict, **self.resultant_dict}
+
 
 def asynchronous_pool_order(func, args, object_list):
     pool = Pool()
