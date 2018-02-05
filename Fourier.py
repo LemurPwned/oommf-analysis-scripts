@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import os, sys
+import os
+import sys
 import csv
 import pickle
 
@@ -76,14 +77,14 @@ class ResonantFrequency(AnalysisUnit):
             plt.plot(self.ordered_param_set, self.global_frequency_set[:, i], 'o')
             fig.suptitle(vector_orientation, fontsize=12)
             savename = vector_orientation + str(self.start_time) + " " + \
-                       str(self.stop_time)
+                        str(self.stop_time)
             savename = os.path.join(self.result_directory, savename)
             self.save_object(fig, savename)
         res_savepoint = os.path.join(self.result_directory, "resonant_frequencies.csv")
         with open(res_savepoint, 'w') as f:
             writer = csv.writer(f, delimiter=',')
             writer.writerows(zip(self.ordered_param_set,
-                                    self.global_frequency_set[:,0:]))
+                                 self.global_frequency_set[:,0:]))
 
     def resonance_peak_module(self):
         fig = plt.figure()
@@ -91,6 +92,8 @@ class ResonantFrequency(AnalysisUnit):
         fig.suptitle("R_pp(param)", fontsize=12)
 
         savename = "Rpp " + str(self.start_time) + " " + str(self.stop_time)
+        savename = os.path.join(self.result_directory, savename)
+
         self.save_object(fig, savename)
 
         fig2 = plt.figure()
@@ -98,15 +101,17 @@ class ResonantFrequency(AnalysisUnit):
         fig2.suptitle("Voltage(scale)", fontsize=12)
 
         savename = "Vol " + str(self.start_time) + " " + str(self.stop_time)
+        savename = os.path.join(self.result_directory, savename)
+
         self.save_object(fig2, savename)
 
     def local_analysis(self, filename):
         param = self.extract_parameter_type(filename, self.param_name)
         # reads each .odt file and returns pandas DataFrame object
-        picklepath = os.path.join(os.path.basename(filename),
+        pickle_path = os.path.join(os.path.basename(filename),
                                   filename.replace(".odt", "stages.pkl"))
-        if os.path.isfile(picklepath) and not self.clear:
-            with open(picklepath, 'rb') as f:
+        if os.path.isfile(pickle_path) and not self.clear:
+            with open(pickle_path, 'rb') as f:
                 df = pickle.load(f)
         else:
             df, stages = self.read_directory_as_df_file(filename)

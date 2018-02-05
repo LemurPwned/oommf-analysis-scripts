@@ -51,7 +51,6 @@ class AnalysisUnit:
     def manage_directory(self, dir_name):
         result_directory = os.path.join(dir_name, "Results")
         if os.path.isdir(result_directory):
-            print("DETECTED ALREADY EXISTING DIRECTORY, SKIPPING...")
             return result_directory
         else:
             os.mkdir(result_directory)
