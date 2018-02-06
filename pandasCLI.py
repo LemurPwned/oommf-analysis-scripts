@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 
 class PandasCLI:
-    def __init__(self, directory):
-        self.directory = directory
+    def __init__(self, d_directory):
+        self.directory = d_directory
         self.df = None
 
     def run_in_folder(self):
@@ -24,7 +24,7 @@ class PandasCLI:
             self.accept_pickle(selected)
 
     def query_loop(self):
-        while(True):
+        while True:
             selected_column = self.numbered_display(self.df.columns)
             self.plotting_module(selected_column)
 
@@ -53,6 +53,7 @@ class PandasCLI:
 
 
 if __name__ == "__main__":
-    directory = "/home/lemurpwned/Simulations/0_1_0_0_sweep/"
-    pandas_cli = PandasCLI(directory=directory)
+    directory = "1_2_1_0_sweep_no_file13" \
+                ""
+    pandas_cli = PandasCLI(d_directory=directory)
     pandas_cli.run_in_folder()

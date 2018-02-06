@@ -57,7 +57,7 @@
         "short": "c",
         "help": "ignores saved objects and overwrites them",
         "type": "bool",
-        "action": "store_false"
+        "action": "store_true"
       }
     ]
 }

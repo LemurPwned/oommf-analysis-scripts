@@ -13,18 +13,6 @@ from AnalysisUnit import AnalysisUnit
 class ResonantFrequency(AnalysisUnit):
     def __init__(self, filename):
         super().__init__(filename)
-        self.clear = False
-        self.directory = None
-        self.time_step = None
-        self.start_time = None
-        self.stop_time = None
-        self.R_pp = None
-        self.global_mean_voltages = None
-        self.global_frequency_set = None
-        self.dispersion = None
-        self.param_name = None
-        self.resonant_frequency = None
-
         self.set_parameters(**self.startup_dict)
         if self.directory is None:
             raise ValueError("Invalid directory ")
@@ -109,21 +97,21 @@ class ResonantFrequency(AnalysisUnit):
         param = self.extract_parameter_type(filename, self.param_name)
         # reads each .odt file and returns pandas DataFrame object
         pickle_path = os.path.join(os.path.basename(filename),
-                                  filename.replace(".odt", "stages.pkl"))
-        if os.path.isfile(pickle_path) and not self.clear:
+                                   filename.replace(".odt", "stages.pkl"))
+        if os.path.isfile(pickle_path) and (not self.clear):
             with open(pickle_path, 'rb') as f:
                 df = pickle.load(f)
         else:
             df, stages = self.read_directory_as_df_file(filename)
         # performs specified data analysis
         shortened_df = self.cutout_sample(df, start_time=self.start_time, stop_time=self.stop_time)
-        rmax = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
-        rmin = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
-        rdiff = rmax-rmin
+        r_max = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+        r_min = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+        r_diff = r_max-r_min
         voltage, m_voltage = self.voltage_calculation(shortened_df, self.resonant_frequency)
         frequency_set = self.find_max_frequency(shortened_df, self.time_step)
         mx, my, mz = frequency_set[:, 0]
-        return rdiff, m_voltage, param, mx, my, mz
+        return r_diff, m_voltage, param, mx, my, mz
 
     def multiple_parameter_analysis(self, filename):
         params = self.extract_parameter_type_dual_params(filename)
@@ -227,11 +215,14 @@ class ResonantFrequency(AnalysisUnit):
         plt.title("{} vs {} for param: {}".format(x_cols[0], y_cols[0], param))
         plt.show()
 
-    def two_parameter_relation(self, parameter1, parameter2, xticks=None, title='Dispersion relation'):
+    def two_parameter_relation(self, parameter1, parameter2, xticks=None,
+                               title='Dispersion relation'):
         """
         Can build up a relation between a given parameter and parameter sweep
         specified in the parameter dict
-        :param parameter: numpy array of size parameter sweep
+        :param parameter1: numpy array of size parameter sweep
+        :param parameter2: second numpy array of size parameter sweep
+        :param xticks: set ticks
         :param title: title of graph
         :return: None
         """

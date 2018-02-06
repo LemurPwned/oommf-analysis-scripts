@@ -12,6 +12,16 @@ class AnalysisUnit:
     def __init__(self, filename):
         self.startup_dict = None
         self.directory = None
+        self.clear = False
+        self.time_step = None
+        self.start_time = None
+        self.stop_time = None
+        self.R_pp = None
+        self.global_mean_voltages = None
+        self.global_frequency_set = None
+        self.dispersion = None
+        self.param_name = None
+        self.resonant_frequency = None
         specification = self.extract_arguments_from_json(filename)
         self.set_inner_interface_specification(specification)
 
