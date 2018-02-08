@@ -53,7 +53,6 @@ class PandasCLI:
 
 
 if __name__ == "__main__":
-    directory = "1_2_1_0_sweep_no_file13" \
-                ""
+    directory = "3_2_3_0_sweep"
     pandas_cli = PandasCLI(d_directory=directory)
     pandas_cli.run_in_folder()

@@ -72,7 +72,7 @@ class ResonantFrequency(AnalysisUnit):
         with open(res_savepoint, 'w') as f:
             writer = csv.writer(f, delimiter=',')
             writer.writerows(zip(self.ordered_param_set,
-                                 self.global_frequency_set[:,0:]))
+                                 self.global_frequency_set[:, 0:]))
 
     def resonance_peak_module(self):
         fig = plt.figure()
@@ -93,24 +93,35 @@ class ResonantFrequency(AnalysisUnit):
 
         self.save_object(fig2, savename)
 
+        res_savepoint = os.path.join(self.result_directory, "voltage_field_values.csv")
+        with open(res_savepoint, 'w') as f:
+            writer = csv.writer(f, delimiter=',')
+            writer.writerows(zip(self.ordered_param_set,
+                                 self.global_mean_voltages))
+
     def local_analysis(self, filename):
+        print(filename)
         param = self.extract_parameter_type(filename, self.param_name)
         # reads each .odt file and returns pandas DataFrame object
-        pickle_path = os.path.join(os.path.basename(filename),
-                                   filename.replace(".odt", "stages.pkl"))
-        if os.path.isfile(pickle_path) and (not self.clear):
+        pickle_path = os.path.join(os.path.dirname(filename),
+                                   os.path.basename(filename).replace(".odt", "stages.pkl"))
+        if self.clear or (not os.path.isfile(pickle_path)):
+            df, stages = self.read_directory_as_df_file(filename)
+        else:
+            # if found, load pickle
             with open(pickle_path, 'rb') as f:
                 df = pickle.load(f)
-        else:
-            df, stages = self.read_directory_as_df_file(filename)
         # performs specified data analysis
-        shortened_df = self.cutout_sample(df, start_time=self.start_time, stop_time=self.stop_time)
-        r_max = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
-        r_min = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
-        r_diff = r_max-r_min
-        voltage, m_voltage = self.voltage_calculation(shortened_df, self.resonant_frequency)
-        frequency_set = self.find_max_frequency(shortened_df, self.time_step)
-        mx, my, mz = frequency_set[:, 0]
+        try:
+            shortened_df = self.cutout_sample(df, start_time=self.start_time, stop_time=self.stop_time)
+            r_max = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+            r_min = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+            r_diff = r_max-r_min
+            voltage, m_voltage = self.voltage_calculation(shortened_df, self.resonant_frequency)
+            frequency_set = self.find_max_frequency(shortened_df, self.time_step)
+            mx, my, mz = frequency_set[:, 0]
+        except (ValueError, KeyError):
+            return [0, 0, param, 0, 0, 0]
         return r_diff, m_voltage, param, mx, my, mz
 
     def multiple_parameter_analysis(self, filename):
