@@ -20,7 +20,6 @@ class ResonantFrequency(AnalysisUnit):
             # prepare resulting directory
             self.result_directory = self.manage_directory(self.directory)
         print("FINAL VALUES: {}".format(self.startup_dict))
-        self.analysis_method = self.fourier_analysis
         self.param_sweep = None
         self.ordered_param_set = []
         self.png = ".png"
@@ -28,15 +27,6 @@ class ResonantFrequency(AnalysisUnit):
         self.os_type = "windows" if "win" in sys.platform else "linux"
         self.delimiter = "/" if self.os_type == "linux" else "\\"
         self.initialize_analysis()
-
-    def fourier_analysis(self, data_frame):
-        """
-        Analysis type: Discrete Fourier Transform
-        :param data_frame: DataFrame object
-        :return: set of resonant frequencies and their values
-        """
-        print("FOURIER ANALYSIS INITIATED")
-        return self.find_max_frequency(df=data_frame, time_step=self.time_step)
 
     def initialize_analysis(self):
         """
@@ -100,7 +90,6 @@ class ResonantFrequency(AnalysisUnit):
                                  self.global_mean_voltages))
 
     def local_analysis(self, filename):
-        print(filename)
         param = self.extract_parameter_type(filename, self.param_name)
         # reads each .odt file and returns pandas DataFrame object
         pickle_path = os.path.join(os.path.dirname(filename),
@@ -118,9 +107,11 @@ class ResonantFrequency(AnalysisUnit):
             r_min = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
             r_diff = r_max-r_min
             voltage, m_voltage = self.voltage_calculation(shortened_df, self.resonant_frequency)
-            frequency_set = self.find_max_frequency(shortened_df, self.time_step)
+            svname = os.path.join(self.result_directory, str(param))
+            frequency_set = self.find_max_frequency(shortened_df, self.time_step, param=svname)
             mx, my, mz = frequency_set[:, 0]
-        except (ValueError, KeyError):
+        except (ValueError) as e:
+            print(e)
             return [0, 0, param, 0, 0, 0]
         return r_diff, m_voltage, param, mx, my, mz
 
@@ -156,7 +147,7 @@ class ResonantFrequency(AnalysisUnit):
         mean_voltage = np.mean(voltage)
         return voltage, mean_voltage
 
-    def subplot_fourier(self, fourier_data, time_step=1e-11, titles=None):
+    def subplot_fourier(self, fourier_data, time_step=1e-11, titles=None, savename=None):
         """
         plots fourier data on stem graphs
         :param fourier_data: list of numpy arrays
@@ -164,20 +155,22 @@ class ResonantFrequency(AnalysisUnit):
         :param titles: used in graph legends
         :return:
         """
+        s = fourier_data[0].size
+        fourier_data = [fd[int(0.1*s):int(0.9*s)] for fd in fourier_data]
+        fourier_data = [fd[::2] for fd in fourier_data]
+        time_step *= 2
         frequency_step = np.fft.fftfreq(fourier_data[0].size, d=time_step)
-        number = len(fourier_data) * 100 + 10
         if titles is None:
             titles = ["none" for x in fourier_data]
         for fourier_piece, title in zip(fourier_data, titles):
-            number += 1
-            plt.subplot(number)
+            fig2 = plt.figure()
+            fig2.suptitle("Fourier for {}".format(title))
             plt.stem(frequency_step, np.abs(fourier_piece))
-            plt.title(title)
-        plt.show()
+            self.save_object(fig2, savename + "_" + title)
 
     def find_max_frequency(self, df, time_step=1e-11, cols=('TimeDriver::mx',
                                                             'TimeDriver::my',
-                                                            'TimeDriver::mz')):
+                                                            'TimeDriver::mz'), param=None):
         """
         Values given in columns must have common sampling frequency
         :param df: DataFrame object containing columns specified in cols
@@ -189,6 +182,8 @@ class ResonantFrequency(AnalysisUnit):
         for col in cols:
             potential_fourier_data.append(np.fft.fft(df[col], axis=0))
         # fourier frequencies must be calculated first to know precise frequency
+        if self.dispersion:
+            self.subplot_fourier(potential_fourier_data, titles=('mx', 'my', 'mz'), savename=param)
         frequency_steps = np.fft.fftfreq(potential_fourier_data[0].size, d=time_step)
         max_freq_set = []
         for freq_data in potential_fourier_data:
@@ -248,15 +243,6 @@ class ResonantFrequency(AnalysisUnit):
         param_value = float(base_param[-1].split(self.delimiter)[0])
         return param_value
 
-    def extract_parameter_type_dual_params(self, filename):
-        # extract top-level directory
-        filename = os.path.dirname(filename).split(self.delimiter)[-1]
-
-        # extract two param_set
-        base_params = filename.split("_")
-        base_param1 = (base_params[0], base_params[1])
-        base_param2 = (base_params[2], base_params[3])
-        return base_param1, base_param2
 
 
 if __name__ == "__main__":

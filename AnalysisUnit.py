@@ -46,7 +46,7 @@ class AnalysisUnit:
             setattr(self, k, v)
 
     def save_object(self, object_type, savename):
-        print("SAVING IN: {}".format(savename))
+        # print("SAVING IN: {}".format(savename))
         if type(object_type) == mpl.figure.Figure:
             object_type.savefig(savename + '.png')
             return True
