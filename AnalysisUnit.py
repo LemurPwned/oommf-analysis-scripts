@@ -58,8 +58,8 @@ class AnalysisUnit:
                                   object_type.columns + ".pkl")
         return False
 
-    def manage_directory(self, dir_name):
-        result_directory = os.path.join(dir_name, "Results")
+    def manage_directory(self, base_name, dir_name="Results"):
+        result_directory = os.path.join(base_name, dir_name)
         if os.path.isdir(result_directory):
             return result_directory
         else:

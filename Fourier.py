@@ -26,7 +26,6 @@ class ResonantFrequency(AnalysisUnit):
 
         self.os_type = "windows" if "win" in sys.platform else "linux"
         self.delimiter = "/" if self.os_type == "linux" else "\\"
-        self.initialize_analysis()
 
     def initialize_analysis(self):
         """
@@ -102,13 +101,16 @@ class ResonantFrequency(AnalysisUnit):
                 df = pickle.load(f)
         # performs specified data analysis
         try:
-            shortened_df = self.cutout_sample(df, start_time=self.start_time, stop_time=self.stop_time)
+            shortened_df = self.cutout_sample(df, start_time=self.start_time,
+                                              stop_time=self.stop_time)
             r_max = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
             r_min = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
             r_diff = r_max-r_min
-            voltage, m_voltage = self.voltage_calculation(shortened_df, self.resonant_frequency)
+            voltage, m_voltage = self.voltage_calculation(shortened_df,
+                                                          self.resonant_frequency)
             svname = os.path.join(self.result_directory, str(param))
-            frequency_set = self.find_max_frequency(shortened_df, self.time_step, param=svname)
+            frequency_set = self.find_max_frequency(shortened_df, self.time_step,
+                                                    param=svname)
             mx, my, mz = frequency_set[:, 0]
         except (ValueError) as e:
             print(e)
@@ -142,7 +144,8 @@ class ResonantFrequency(AnalysisUnit):
         omega = 2 * np.pi * frequency
         phase = 0
         amplitude = np.sqrt(power / avg_resistance)
-        current = amplitude * np.sin(omega * df_limited['TimeDriver::Simulation time'] + phase)
+        current = amplitude * np.sin(omega * df_limited['TimeDriver::Simulation time']
+                                     + phase)
         voltage = df_limited['MF_Magnetoresistance::magnetoresistance'] * current
         mean_voltage = np.mean(voltage)
         return voltage, mean_voltage
@@ -183,7 +186,9 @@ class ResonantFrequency(AnalysisUnit):
             potential_fourier_data.append(np.fft.fft(df[col], axis=0))
         # fourier frequencies must be calculated first to know precise frequency
         if self.dispersion:
-            self.subplot_fourier(potential_fourier_data, titles=('mx', 'my', 'mz'), savename=param)
+            pass
+            # self.subplot_fourier(potential_fourier_data, titles=('mx', 'my', 'mz'),
+            #                      savename=param)
         frequency_steps = np.fft.fftfreq(potential_fourier_data[0].size, d=time_step)
         max_freq_set = []
         for freq_data in potential_fourier_data:
@@ -244,6 +249,6 @@ class ResonantFrequency(AnalysisUnit):
         return param_value
 
 
-
 if __name__ == "__main__":
     rf = ResonantFrequency("interface.json")
+    rf.initialize_analysis()
