@@ -59,11 +59,12 @@ class MultiParam(ResonantFrequency):
                 print(param_value)
                 dir_name = self.manage_directory(self.result_directory, self.base_param1 +
                                                  "_" + str(param_value))
+                print(self.base_param2)
                 constant_param1 = self.merged_data[self.merged_data[self.base_param1] == param_value]
                 self.plot_saving("Rpp", dir_name, constant_param1[self.base_param2],
-                                 constant_param1['R_diff'])
-                self.plot_saving("Rpp", dir_name, constant_param1[self.base_param2],
-                                 constant_param1['R_diff'])
+                                 constant_param1['Rpp_diff'])
+                self.plot_saving("Mean voltage", dir_name, constant_param1[self.base_param2],
+                                 constant_param1['M_volt'])
         else:
             for param_value in self.merged_data[self.base_param1].unique():
                 print(param_value)
