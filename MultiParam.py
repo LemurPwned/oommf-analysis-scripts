@@ -22,6 +22,7 @@ class MultiParam(ResonantFrequency):
             self.result_directory = self.manage_directory(self.directory)
         self.base_param1 = 'P1'
         self.base_param2 = 'P2'
+
         self.merged_data = None
         self.png = ".png"
 
@@ -31,25 +32,33 @@ class MultiParam(ResonantFrequency):
     def initialize_analysis(self):
         file_names = self.search_directory_for_odt()
         self.set_parameters()
+        # assign names to parameters
+        self.extract_parameter_type_dual_params(file_names[0], setting=True)
+
         output = asynchronous_pool_order(self.multi_parameter_analysis, (), file_names)
         self.merged_data = pd.DataFrame(output, columns=[self.base_param1,
                                                          self.base_param2,
                                                          'Rpp_diff',
                                                          'M_volt', 'Fmx', 'Fmy', 'Fmz'])
+        # in case two parameters could be reversed
+        if self.reverse:
+            self.base_param2, self.base_param1 = self.base_param1, self.base_param2
         savename = os.path.join(self.result_directory, "final_data_frame")
         self.save_object(self.merged_data, savename)
         print("FINISHED PARSING, NOW PLOTTING...")
         self.perform_plotting(self.dispersion)
 
-    def perform_plotting(self, disp):
+    def perform_plotting(self, dispersion):
         """
         param 1 will be held constant while the other will be swept
         :return:
         """
         # keep param 1 constant
-        if not disp:
+        if not dispersion:
             for param_value in self.merged_data[self.base_param1].unique():
-                dir_name = self.manage_directory(self.result_directory, str(param_value))
+                print(param_value)
+                dir_name = self.manage_directory(self.result_directory, self.base_param1 +
+                                                 "_" + str(param_value))
                 constant_param1 = self.merged_data[self.merged_data[self.base_param1] == param_value]
                 self.plot_saving("Rpp", dir_name, constant_param1[self.base_param2],
                                  constant_param1['R_diff'])
@@ -58,7 +67,8 @@ class MultiParam(ResonantFrequency):
         else:
             for param_value in self.merged_data[self.base_param1].unique():
                 print(param_value)
-                dir_name = self.manage_directory(self.result_directory, str(param_value))
+                dir_name = self.manage_directory(self.result_directory, self.base_param1 +
+                                                 "_" + str(param_value))
                 constant_param1 = self.merged_data[self.merged_data[self.base_param1] == param_value]
                 for vector_orientation in ['Fmx', 'Fmy', 'Fmz']:
                     self.plot_saving(vector_orientation, dir_name,
@@ -82,20 +92,19 @@ class MultiParam(ResonantFrequency):
         self.save_object(fig, savename)
         plt.close(fig)
 
-    def extract_parameter_type_dual_params(self, filename):
+    def extract_parameter_type_dual_params(self, filename, setting=False):
         # extract top-level directory
         filename = os.path.dirname(filename).split(self.delimiter)[-1]
         # extract two param_set
         base_params = filename.split("_")
         base_param1 = (base_params[0], base_params[1])
         base_param2 = (base_params[2], base_params[3])
-        # if (self.base_param1 is None) and (self.base_param2 is None):
-        #     self.base_param1 = base_params[0]
-        #     self.base_param2 = base_params[2]
+        if setting:
+            self.base_param1 = base_params[0]
+            self.base_param2 = base_params[2]
         return base_param1, base_param2
 
     def multi_parameter_analysis(self, filename):
-        # print("FILENAME {}".format(filename))
         param1, param2 = self.extract_parameter_type_dual_params(filename)
         # reads each .odt file and returns pandas DataFrame object
         pickle_path = os.path.join(os.path.dirname(filename),

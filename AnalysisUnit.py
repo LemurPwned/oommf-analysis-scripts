@@ -22,6 +22,8 @@ class AnalysisUnit:
         self.dispersion = None
         self.param_name = None
         self.resonant_frequency = None
+        self.reverse = False
+
         specification = self.extract_arguments_from_json(filename)
         self.set_inner_interface_specification(specification)
 

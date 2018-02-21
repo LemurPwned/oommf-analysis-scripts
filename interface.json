@@ -58,6 +58,13 @@
         "help": "ignores saved objects and overwrites them",
         "type": "bool",
         "action": "store_true"
+      },
+      {
+        "name": "reverse",
+        "short": "r",
+        "help": "reverses the parameter order",
+        "type": "bool",
+        "action": "store_true"
       }
     ]
 }
