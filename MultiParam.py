@@ -59,7 +59,6 @@ class MultiParam(ResonantFrequency):
                 print(param_value)
                 dir_name = self.manage_directory(self.result_directory, self.base_param1 +
                                                  "_" + str(param_value))
-                print(self.base_param2)
                 constant_param1 = self.merged_data[self.merged_data[self.base_param1] == param_value]
                 self.plot_saving("Rpp", dir_name, constant_param1[self.base_param2],
                                  constant_param1['Rpp_diff'])
@@ -98,8 +97,8 @@ class MultiParam(ResonantFrequency):
         filename = os.path.dirname(filename).split(self.delimiter)[-1]
         # extract two param_set
         base_params = filename.split("_")
-        base_param1 = (base_params[0], base_params[1])
-        base_param2 = (base_params[2], base_params[3])
+        base_param1 = (base_params[0], np.float64(base_params[1]))
+        base_param2 = (base_params[2], np.float64(base_params[3]))
         if setting:
             self.base_param1 = base_params[0]
             self.base_param2 = base_params[2]
@@ -131,7 +130,7 @@ class MultiParam(ResonantFrequency):
                                                     param=savename)
             mx, my, mz = frequency_set[:, 0]
         except ValueError as e:
-            print(e)
+            print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
             return [param1[1], param2[1], 0, 0, 0, 0, 0]
         return [param1[1], param2[1], r_diff, m_voltage, mx, my, mz]
 
