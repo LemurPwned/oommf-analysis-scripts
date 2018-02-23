@@ -45,6 +45,8 @@ class MultiParam(ResonantFrequency):
             self.base_param2, self.base_param1 = self.base_param1, self.base_param2
         savename = os.path.join(self.result_directory, "final_data_frame")
         self.save_object(self.merged_data, savename)
+        self.merged_data.to_csv(os.path.join(self.result_directory,
+                                             "CSV_DATA_VOLTAGES_RPP.csv"))
         print("FINISHED PARSING, NOW PLOTTING...")
         self.perform_plotting(self.dispersion)
 
