@@ -93,12 +93,16 @@ class ResonantFrequency(AnalysisUnit):
         # reads each .odt file and returns pandas DataFrame object
         pickle_path = os.path.join(os.path.dirname(filename),
                                    os.path.basename(filename).replace(".odt", "stages.pkl"))
-        if self.clear or (not os.path.isfile(pickle_path)):
-            df, stages = self.read_directory_as_df_file(filename)
-        else:
-            # if found, load pickle
-            with open(pickle_path, 'rb') as f:
-                df = pickle.load(f)
+        try:
+            if self.clear or (not os.path.isfile(pickle_path)):
+                df, stages = self.read_directory_as_df_file(filename)
+            else:
+                # if found, load pickle
+                with open(pickle_path, 'rb') as f:
+                    df = pickle.load(f)
+        except AssertionError as e:
+            print("An error occurred {} in {}".format(e, filename))
+            return [0, 0, param, 0, 0, 0]
         # performs specified data analysis
         try:
             shortened_df = self.cutout_sample(df, start_time=self.start_time,
@@ -112,7 +116,7 @@ class ResonantFrequency(AnalysisUnit):
             frequency_set = self.find_max_frequency(shortened_df, self.time_step,
                                                     param=svname)
             mx, my, mz = frequency_set[:, 0]
-        except (ValueError) as e:
+        except ValueError as e:
             print(e)
             return [0, 0, param, 0, 0, 0]
         return r_diff, m_voltage, param, mx, my, mz
