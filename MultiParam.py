@@ -109,16 +109,8 @@ class MultiParam(ResonantFrequency):
     def multi_parameter_analysis(self, filename):
         param1, param2 = self.extract_parameter_type_dual_params(filename)
         # reads each .odt file and returns pandas DataFrame object
-        pickle_path = os.path.join(os.path.dirname(filename),
-                                   os.path.basename(filename).replace(".odt",
-                                                                      "stages.pkl"))
         try:
-            if self.clear or (not os.path.isfile(pickle_path)):
-                df, stages = self.read_directory_as_df_file(filename)
-            else:
-                # if found, load pickle
-                with open(pickle_path, 'rb') as f:
-                    df = pickle.load(f)
+            self.pickle_load_procedure(filename)
         except AssertionError as e:
             print("An error occurred {} in {}".format(e, filename))
             return [param1[1], param2[1], 0, 0, 0, 0, 0]

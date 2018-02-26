@@ -138,7 +138,6 @@ class AnalysisUnit:
                 print("Could not save {}".format(filename))
             return df, stages
 
-
     def pickle_load_procedure(self, filename):
         # reads each .odt file and returns pandas DataFrame object
         pickle_path = os.path.join(os.path.dirname(filename),
