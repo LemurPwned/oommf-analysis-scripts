@@ -4,6 +4,7 @@ import numpy as np
 import json
 import os
 import glob
+import pickle
 
 from Interface import Interface, ParsingStage
 
@@ -136,3 +137,29 @@ class AnalysisUnit:
             if not self.save_object(df, filename.replace(".odt", "stages")):
                 print("Could not save {}".format(filename))
             return df, stages
+
+
+    def pickle_load_procedure(self, filename):
+        # reads each .odt file and returns pandas DataFrame object
+        pickle_path = os.path.join(os.path.dirname(filename),
+                                   os.path.basename(filename).replace(".odt", "stages.pkl"))
+        if self.clear or (not os.path.isfile(pickle_path)):
+                df, stages = self.read_directory_as_df_file(filename)
+        else:
+            # if found, load pickle
+            with open(pickle_path, 'rb') as f:
+                df = pickle.load(f)
+        return df
+
+    def standard_fourier_analysis(self, df, savename):
+        # performs specified data analysis
+        shortened_df = self.cutout_sample(df, start_time=self.start_time,
+                                          stop_time=self.stop_time)
+        r_max = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+        r_min = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+        r_diff = r_max-r_min
+        voltage, m_voltage = self.voltage_calculation(shortened_df,
+                                                      self.resonant_frequency)
+        frequency_set = self.find_max_frequency(shortened_df, self.time_step,
+                                                param=savename)
+        mx, my, mz = frequency_set[:, 0]

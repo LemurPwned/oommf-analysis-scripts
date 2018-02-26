@@ -117,13 +117,9 @@ class ResonantFrequency(AnalysisUnit):
                                                     param=svname)
             mx, my, mz = frequency_set[:, 0]
         except ValueError as e:
-            print(e)
+            print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
             return [0, 0, param, 0, 0, 0]
         return r_diff, m_voltage, param, mx, my, mz
-
-    def multiple_parameter_analysis(self, filename):
-        params = self.extract_parameter_type_dual_params(filename)
-        return params
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):
         """
