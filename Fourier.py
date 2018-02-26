@@ -91,31 +91,15 @@ class ResonantFrequency(AnalysisUnit):
     def local_analysis(self, filename):
         param = self.extract_parameter_type(filename, self.param_name)
         # reads each .odt file and returns pandas DataFrame object
-        pickle_path = os.path.join(os.path.dirname(filename),
-                                   os.path.basename(filename).replace(".odt", "stages.pkl"))
         try:
-            if self.clear or (not os.path.isfile(pickle_path)):
-                df, stages = self.read_directory_as_df_file(filename)
-            else:
-                # if found, load pickle
-                with open(pickle_path, 'rb') as f:
-                    df = pickle.load(f)
+            df = self.pickle_load_procedure(filename)
         except AssertionError as e:
             print("An error occurred {} in {}".format(e, filename))
             return [0, 0, param, 0, 0, 0]
         # performs specified data analysis
         try:
-            shortened_df = self.cutout_sample(df, start_time=self.start_time,
-                                              stop_time=self.stop_time)
-            r_max = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
-            r_min = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
-            r_diff = r_max-r_min
-            voltage, m_voltage = self.voltage_calculation(shortened_df,
-                                                          self.resonant_frequency)
-            svname = os.path.join(self.result_directory, str(param))
-            frequency_set = self.find_max_frequency(shortened_df, self.time_step,
-                                                    param=svname)
-            mx, my, mz = frequency_set[:, 0]
+            savename = os.path.join(self.result_directory, str(param))
+            r_diff, m_voltage, mx, my, mz = self.standard_fourier_analysis(df, savename)
         except ValueError as e:
             print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
             return [0, 0, param, 0, 0, 0]

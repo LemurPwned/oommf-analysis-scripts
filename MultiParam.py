@@ -110,23 +110,14 @@ class MultiParam(ResonantFrequency):
         param1, param2 = self.extract_parameter_type_dual_params(filename)
         # reads each .odt file and returns pandas DataFrame object
         try:
-            self.pickle_load_procedure(filename)
+            df = self.pickle_load_procedure(filename)
         except AssertionError as e:
             print("An error occurred {} in {}".format(e, filename))
             return [param1[1], param2[1], 0, 0, 0, 0, 0]
         try:
-            shortened_df = self.cutout_sample(df, start_time=self.start_time,
-                                              stop_time=self.stop_time)
-            r_max = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
-            r_min = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
-            r_diff = r_max-r_min
-            voltage, m_voltage = self.voltage_calculation(shortened_df,
-                                                          self.resonant_frequency)
             savename = os.path.join(self.result_directory, str(param1[1]) + "_" +
                                     str(param2[1]))
-            frequency_set = self.find_max_frequency(shortened_df, self.time_step,
-                                                    param=savename)
-            mx, my, mz = frequency_set[:, 0]
+            r_diff, m_voltage, mx, my, mz = self.standard_fourier_analysis(df, savename)
         except ValueError as e:
             print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
             return [param1[1], param2[1], 0, 0, 0, 0, 0]

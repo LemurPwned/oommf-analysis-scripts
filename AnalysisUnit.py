@@ -141,7 +141,8 @@ class AnalysisUnit:
     def pickle_load_procedure(self, filename):
         # reads each .odt file and returns pandas DataFrame object
         pickle_path = os.path.join(os.path.dirname(filename),
-                                   os.path.basename(filename).replace(".odt", "stages.pkl"))
+                                   os.path.basename(filename).replace(".odt",
+                                                                      "stages.pkl"))
         if self.clear or (not os.path.isfile(pickle_path)):
                 df, stages = self.read_directory_as_df_file(filename)
         else:
@@ -162,3 +163,4 @@ class AnalysisUnit:
         frequency_set = self.find_max_frequency(shortened_df, self.time_step,
                                                 param=savename)
         mx, my, mz = frequency_set[:, 0]
+        return r_diff, m_voltage, mx, my, mz
