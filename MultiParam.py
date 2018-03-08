@@ -66,6 +66,8 @@ class MultiParam(ResonantFrequency):
                                  constant_param1['Rpp_diff'])
                 self.plot_saving("Mean voltage", dir_name, constant_param1[self.base_param2],
                                  constant_param1['M_volt'])
+                res_savepoint = os.path.join(dir_name, str(param_value).replace('-','m') + "_Freq_result.csv")
+                constant_param1[[self.base_param2, 'Rpp_diff', 'M_volt']].to_csv(res_savepoint)
         else:
             for param_value in self.merged_data[self.base_param1].unique():
                 print(param_value)
@@ -76,11 +78,8 @@ class MultiParam(ResonantFrequency):
                     self.plot_saving(vector_orientation, dir_name,
                                      constant_param1[self.base_param2],
                                      constant_param1[vector_orientation])
-                res_savepoint = os.path.join(dir_name, "resonant_frequencies.csv")
-                with open(res_savepoint, 'w') as f:
-                    writer = csv.writer(f, delimiter=',')
-                    writer.writerows(zip(constant_param1[self.base_param2].tolist(),
-                                         constant_param1[['Fmx', 'Fmy', 'Fmz']].values))
+                res_savepoint = os.path.join(dir_name, "Resonant_frequencies_" + str(param_value).replace('-','m') + ".csv")
+                constant_param1[[self.base_param2, 'Fmx', 'Fmy', 'Fmz']].to_csv(res_savepoint)
 
     def plot_saving(self, name, dir_name, array1, array2=None):
         fig = plt.figure()
@@ -118,7 +117,7 @@ class MultiParam(ResonantFrequency):
             savename = os.path.join(self.result_directory, str(param1[1]) + "_" +
                                     str(param2[1]))
             r_diff, m_voltage, mx, my, mz = self.standard_fourier_analysis(df, savename)
-        except ValueError as e:
+        except (ValueError, KeyError) as e:
             print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
             return [param1[1], param2[1], 0, 0, 0, 0, 0]
         return [param1[1], param2[1], r_diff, m_voltage, mx, my, mz]
