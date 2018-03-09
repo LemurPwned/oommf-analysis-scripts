@@ -118,7 +118,6 @@ class ResonantFrequency(AnalysisUnit):
         if stop_time is None:
             return data.loc[(data['TimeDriver::Simulation time'] > start_time)]
         else:
-            # print("Start time {}, stop time {}".format(start_time, stop_time))
             return data.loc[(data['TimeDriver::Simulation time'] >= start_time) &
                             (data['TimeDriver::Simulation time'] < stop_time)]
 
@@ -157,7 +156,7 @@ class ResonantFrequency(AnalysisUnit):
 
     def find_max_frequency(self, df, time_step=1e-11, cols=('TimeDriver::mx',
                                                             'TimeDriver::my',
-                                                            'TimeDriver::mz'), param=None):
+                                                            'TimeDriver::mz')):
         """
         Values given in columns must have common sampling frequency
         :param df: DataFrame object containing columns specified in cols
@@ -169,10 +168,6 @@ class ResonantFrequency(AnalysisUnit):
         for col in cols:
             potential_fourier_data.append(np.fft.fft(df[col], axis=0))
         # fourier frequencies must be calculated first to know precise frequency
-        if self.dispersion:
-            pass
-            # self.subplot_fourier(potential_fourier_data, titles=('mx', 'my', 'mz'),
-            #                      savename=param)
         frequency_steps = np.fft.fftfreq(potential_fourier_data[0].size, d=time_step)
         max_freq_set = []
         for freq_data in potential_fourier_data:
@@ -183,53 +178,15 @@ class ResonantFrequency(AnalysisUnit):
                 if np.abs(amp) > max_val and frequency > 0:
                     max_val = amp
                     max_freq = frequency
-            # print("MAX FREQ: {}, VALUE {}".format(max_freq / 1e9, max_val))
             max_freq_set.append([max_freq / 1e9, max_val])
         # display Fourier
         return np.array(max_freq_set, dtype=np.float64)
 
-    def single_plot_columns(self, df, x_cols=('TimeDriver::Simulation time',
-                                              'TimeDriver::Simulation time'),
-                            y_cols=('TimeDriver::my',
-                                    'TimeDriver::mz'),
-                            param="Unknown"):
-        """
-        plots a simple column set from a data frame
-        :param df: DataFrame object
-        :param x_cols: x-columns from df to be plotted on x-axis
-        :param y_cols: y-columns from df to be plotted on y=axis
-        :param param: is sweep-type
-        :return: None
-        """
-        handles = []
-        df = self.cutout_sample(df, start_time=0, stop_time=5.0e9)
-        for x_column, y_column in zip(x_cols, y_cols):
-            ax, = plt.plot(df[x_column], df[y_column], label=y_column)
-            handles.append(ax)
-        plt.legend(handles=handles)
-        plt.title("{} vs {} for param: {}".format(x_cols[0], y_cols[0], param))
-        plt.show()
-
-    def two_parameter_relation(self, parameter1, parameter2, xticks=None,
-                               title='Dispersion relation'):
-        """
-        Can build up a relation between a given parameter and parameter sweep
-        specified in the parameter dict
-        :param parameter1: numpy array of size parameter sweep
-        :param parameter2: second numpy array of size parameter sweep
-        :param xticks: set ticks
-        :param title: title of graph
-        :return: None
-        """
-        plt.plot(parameter1, parameter2, '*')
-        if xticks is not None:
-            plt.xticks(xticks)
-        plt.title(title)
-        plt.show()
-
     def extract_parameter_type(self, filename, parameter_name):
         base_param = filename.split(parameter_name + "_")
         param_value = float(base_param[-1].split(self.delimiter)[0])
+        if self.extract_frequency:
+            self.set_resonant_frequency(param_value)
         return param_value
 
 

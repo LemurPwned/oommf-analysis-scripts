@@ -65,6 +65,19 @@
         "help": "reverses the parameter order",
         "type": "bool",
         "action": "store_true"
+      },
+      {
+        "name": "frequency_name",
+        "short": "fn",
+        "help": "sets frequency name",
+        "type": "str"
+      },
+      {
+        "name": "extract_frequency",
+        "short": "ef",
+        "help": "for analysis sweep",
+        "type": "bool",
+        "action": "store_true"
       }
     ]
 }

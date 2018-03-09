@@ -24,6 +24,8 @@ class AnalysisUnit:
         self.param_name = None
         self.resonant_frequency = None
         self.reverse = False
+        self.frequency_name = 'freq'
+        self.extract_frequency = False
 
         specification = self.extract_arguments_from_json(filename)
         self.set_inner_interface_specification(specification)
@@ -164,3 +166,6 @@ class AnalysisUnit:
                                                 param=savename)
         mx, my, mz = frequency_set[:, 0]
         return r_diff, m_voltage, mx, my, mz
+
+    def set_resonant_frequency(self, extracted_frequency):
+        self.resonant_frequency = extracted_frequency
