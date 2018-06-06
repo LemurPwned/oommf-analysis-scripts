@@ -24,6 +24,7 @@ class ResonantFrequency(AnalysisUnit):
         self.param_sweep = None
         self.ordered_param_set = []
         self.png = ".png"
+        self.multiple = True
 
         self.os_type = "windows" if "win" in sys.platform else "linux"
         self.delimiter = "/" if self.os_type == "linux" else "\\"
@@ -47,6 +48,11 @@ class ResonantFrequency(AnalysisUnit):
         file_names = self.search_directory_for_odt()
         self.set_parameters()
 
+        if self.multiple:
+            self.multiple_parameter_analysis()
+        else:
+            quit()
+
         output = asynchronous_pool_order(self.local_analysis, (), file_names)
         output = np.array(output)
         self.R_pp = output[:, 0]
@@ -58,6 +64,11 @@ class ResonantFrequency(AnalysisUnit):
             self.dispersion_module()
         else:
             self.resonance_peak_module()
+
+    def multiple_parameter_analysis(self):
+        file_names = self.search_directory_for_odt()
+        self.set_parameters()
+        self.multiple_parameter_extraction(filename)
 
     def dispersion_module(self):
         for i, vector_orientation in enumerate(['mx', 'my', 'mz']):
@@ -100,7 +111,6 @@ class ResonantFrequency(AnalysisUnit):
                                  self.global_mean_voltages))
 
     def local_analysis(self, filename):
-        print(filename)
         param = self.extract_parameter_type(filename, self.param_name)
         # reads each .odt file and returns pandas DataFrame object
         pickle_path = os.path.join(os.path.dirname(filename),
@@ -124,8 +134,16 @@ class ResonantFrequency(AnalysisUnit):
             return [0, 0, param, 0, 0, 0]
         return r_diff, m_voltage, param, mx, my, mz
 
-    def multiple_parameter_analysis(self, filename):
-        params = self.extract_parameter_type_dual_params(filename)
+    def multiple_parameter_extraction(self, filename):
+        param1, parma2 = self.extract_parameter_type_dual_params(filename)
+        print("DETECTED MULTIPLE PARAMETERS")
+        selected = input("1) {}\n 2) {}\n".format(param1[0], param2[0]))
+        try:
+            selected = int(selected)
+        except ValueError:
+            print("TRY AGAIN, WRONG ARGUMENT")
+            self.multiple_parameter_extraction(filename)
+        print(selected)
         return params
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):
