@@ -94,7 +94,7 @@ class ResonantFrequency(AnalysisUnit):
         try:
             df = self.pickle_load_procedure(filename)
         except AssertionError as e:
-            print("An error occurred {} in {}".format(e, filename))
+            print("An error occurred of type: {} in file: {}".format(e, filename))
             return [0, 0, param, 0, 0, 0]
         # performs specified data analysis
         try:

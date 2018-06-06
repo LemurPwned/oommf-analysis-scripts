@@ -50,7 +50,7 @@ class ParsingStage:
                 if getattr(self.args, arg_name) is not None:
                     self.set_dict_param(arg_name, getattr(self.args, arg_name))
             except TypeError:
-                print("ASKED FOR NON_EXISTENT VALUE {}".format(arg_name))
+                print("ASKED FOR NON-EXISTENT VALUE {}".format(arg_name))
 
     def set_dict_param(self, param_name, param_val):
         self.resultant_dict[param_name] = param_val

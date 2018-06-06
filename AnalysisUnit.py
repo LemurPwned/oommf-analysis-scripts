@@ -112,6 +112,7 @@ class AnalysisUnit:
             cols = cols.replace("} ", "")
             cols = cols.replace("{", "")
             cols = cols.replace("MF", "Oxs_MF")
+            cols = cols.replace("PBC", "Oxs_PBC")
             cols = cols.split("Oxs_")
             del cols[0]
             cols = [x.strip() for x in cols]
@@ -146,7 +147,8 @@ class AnalysisUnit:
                                    os.path.basename(filename).replace(".odt",
                                                                       "stages.pkl"))
         if self.clear or (not os.path.isfile(pickle_path)):
-                df, stages = self.read_directory_as_df_file(filename)
+            print("Pickle not found, parsing ... {}".format(filename))
+            df, stages = self.read_directory_as_df_file(filename)
         else:
             # if found, load pickle
             with open(pickle_path, 'rb') as f:
@@ -162,8 +164,7 @@ class AnalysisUnit:
         r_diff = r_max-r_min
         voltage, m_voltage = self.voltage_calculation(shortened_df,
                                                       self.resonant_frequency)
-        frequency_set = self.find_max_frequency(shortened_df, self.time_step,
-                                                param=savename)
+        frequency_set = self.find_max_frequency(shortened_df, self.time_step)
         mx, my, mz = frequency_set[:, 0]
         return r_diff, m_voltage, mx, my, mz
 
