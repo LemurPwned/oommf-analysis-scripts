@@ -4,6 +4,7 @@ import numpy as np
 import json
 import os
 import glob
+import pickle
 
 from Interface import Interface, ParsingStage
 
@@ -22,6 +23,10 @@ class AnalysisUnit:
         self.dispersion = None
         self.param_name = None
         self.resonant_frequency = None
+        self.reverse = False
+        self.frequency_name = 'freq'
+        self.extract_frequency = False
+
         specification = self.extract_arguments_from_json(filename)
         self.set_inner_interface_specification(specification)
 
@@ -46,7 +51,7 @@ class AnalysisUnit:
             setattr(self, k, v)
 
     def save_object(self, object_type, savename):
-        print("SAVING IN: {}".format(savename))
+        # print("SAVING IN: {}".format(savename))
         if type(object_type) == mpl.figure.Figure:
             object_type.savefig(savename + '.png')
             return True
@@ -58,8 +63,8 @@ class AnalysisUnit:
                                   object_type.columns + ".pkl")
         return False
 
-    def manage_directory(self, dir_name):
-        result_directory = os.path.join(dir_name, "Results")
+    def manage_directory(self, base_name, dir_name="Results"):
+        result_directory = os.path.join(base_name, dir_name)
         if os.path.isdir(result_directory):
             return result_directory
         else:
@@ -134,3 +139,33 @@ class AnalysisUnit:
             if not self.save_object(df, filename.replace(".odt", "stages")):
                 print("Could not save {}".format(filename))
             return df, stages
+
+    def pickle_load_procedure(self, filename):
+        # reads each .odt file and returns pandas DataFrame object
+        pickle_path = os.path.join(os.path.dirname(filename),
+                                   os.path.basename(filename).replace(".odt",
+                                                                      "stages.pkl"))
+        if self.clear or (not os.path.isfile(pickle_path)):
+                df, stages = self.read_directory_as_df_file(filename)
+        else:
+            # if found, load pickle
+            with open(pickle_path, 'rb') as f:
+                df = pickle.load(f)
+        return df
+
+    def standard_fourier_analysis(self, df, savename):
+        # performs specified data analysis
+        shortened_df = self.cutout_sample(df, start_time=self.start_time,
+                                          stop_time=self.stop_time)
+        r_max = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+        r_min = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
+        r_diff = r_max-r_min
+        voltage, m_voltage = self.voltage_calculation(shortened_df,
+                                                      self.resonant_frequency)
+        frequency_set = self.find_max_frequency(shortened_df, self.time_step,
+                                                param=savename)
+        mx, my, mz = frequency_set[:, 0]
+        return r_diff, m_voltage, mx, my, mz
+
+    def set_resonant_frequency(self, extracted_frequency):
+        self.resonant_frequency = extracted_frequency

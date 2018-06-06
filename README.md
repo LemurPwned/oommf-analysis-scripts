@@ -4,7 +4,8 @@
 * python 3 or newer 
 * all packages from requirements.txt installed for python 
 
-pip install -r requirements.txt
+Enter the folder where the repository was downloaded or cloned and enter
+pip install -r requirements.txt (or pip3 install -r requirements.txt *depending on the system alias - must be python3.6*)
 
 ### HOW TO USE 
 * download all the files from the directory, including those 
