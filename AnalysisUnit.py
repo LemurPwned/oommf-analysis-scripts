@@ -51,7 +51,6 @@ class AnalysisUnit:
             setattr(self, k, v)
 
     def save_object(self, object_type, savename):
-        # print("SAVING IN: {}".format(savename))
         if type(object_type) == mpl.figure.Figure:
             object_type.savefig(savename + '.png')
             return True
@@ -64,7 +63,10 @@ class AnalysisUnit:
         return False
 
     def manage_directory(self, base_name, dir_name="Results"):
-        result_directory = os.path.join(base_name, dir_name)
+        base_dir_name = os.path.basename(base_name) if not base_name.endswith(
+            '/') else os.path.basename(base_name[:-1])
+        result_dir_name = dir_name + "_" + base_dir_name
+        result_directory = os.path.join(base_name, result_dir_name)
         if os.path.isdir(result_directory):
             return result_directory
         else:
@@ -162,11 +164,16 @@ class AnalysisUnit:
         r_max = np.max(shortened_df['MF_Magnetoresistance::magnetoresistance'])
         r_min = np.min(shortened_df['MF_Magnetoresistance::magnetoresistance'])
         r_diff = r_max-r_min
-        voltage, m_voltage = self.voltage_calculation(shortened_df,
-                                                      self.resonant_frequency)
+        _, m_voltage = self.voltage_calculation(shortened_df,
+                                                self.resonant_frequency)
         frequency_set = self.find_max_frequency(shortened_df, self.time_step)
         mx, my, mz = frequency_set[:, 0]
-        return r_diff, m_voltage, mx, my, mz
+
+        avg_mx = np.mean(shortened_df['TimeDriver::mx'])
+        avg_my = np.mean(shortened_df['TimeDriver::my'])
+        avg_mz = np.mean(shortened_df['TimeDriver::mz'])
+
+        return r_diff, m_voltage, mx, my, mz, avg_mx, avg_my, avg_mz
 
     def set_resonant_frequency(self, extracted_frequency):
         self.resonant_frequency = extracted_frequency

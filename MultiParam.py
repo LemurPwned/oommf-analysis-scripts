@@ -35,7 +35,8 @@ class MultiParam(ResonantFrequency):
         # assign names to parameters
         self.extract_parameter_type_dual_params(file_names[0], setting=True)
 
-        output = asynchronous_pool_order(self.multi_parameter_analysis, (), file_names)
+        output = asynchronous_pool_order(
+            self.multi_parameter_analysis, (), file_names)
         self.merged_data = pd.DataFrame(output, columns=[self.base_param1,
                                                          self.base_param2,
                                                          'Rpp_diff',
@@ -68,7 +69,8 @@ class MultiParam(ResonantFrequency):
                                  constant_param1['M_volt'])
                 res_savepoint = os.path.join(dir_name, str(param_value).replace('-', 'm')
                                              + "_Freq_result.csv")
-                constant_param1[[self.base_param2, 'Rpp_diff', 'M_volt']].to_csv(res_savepoint)
+                constant_param1[[self.base_param2, 'Rpp_diff', 'M_volt']].to_csv(
+                    res_savepoint)
         else:
             for param_value in self.merged_data[self.base_param1].unique():
                 print(param_value)
@@ -81,7 +83,8 @@ class MultiParam(ResonantFrequency):
                                      constant_param1[vector_orientation])
                 res_savepoint = os.path.join(dir_name, "Resonant_frequencies_"
                                              + str(param_value).replace('-', 'm') + ".csv")
-                constant_param1[[self.base_param2, 'Fmx', 'Fmy', 'Fmz']].to_csv(res_savepoint)
+                constant_param1[[self.base_param2, 'Fmx',
+                                 'Fmy', 'Fmz']].to_csv(res_savepoint)
 
     def plot_saving(self, name, dir_name, array1, array2=None):
         fig = plt.figure()
@@ -124,7 +127,8 @@ class MultiParam(ResonantFrequency):
         try:
             savename = os.path.join(self.result_directory, str(param1[1]) + "_" +
                                     str(param2[1]))
-            r_diff, m_voltage, mx, my, mz = self.standard_fourier_analysis(df, savename)
+            r_diff, m_voltage, mx, my, mz, _, _, _ = self.standard_fourier_analysis(
+                df, savename)
         except (ValueError, KeyError) as e:
             print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
             return [param1[1], param2[1], 0, 0, 0, 0, 0]

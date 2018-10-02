@@ -41,8 +41,10 @@ class ResonantFrequency(AnalysisUnit):
         self.R_pp = output[:, 0]
         self.global_mean_voltages = output[:, 1]
         self.ordered_param_set = output[:, 2]
-        self.global_frequency_set = output[:, 3:]
-
+        self.global_frequency_set = output[:, 3:6]
+        self.m_dict = {'mx': output[:, 6],
+                       'my': output[:, 7],
+                       'mz': output[:, 8]}
         if self.dispersion:
             self.dispersion_module()
         else:
@@ -51,17 +53,33 @@ class ResonantFrequency(AnalysisUnit):
     def dispersion_module(self):
         for i, vector_orientation in enumerate(['mx', 'my', 'mz']):
             fig = plt.figure()
-            plt.plot(self.ordered_param_set, self.global_frequency_set[:, i], 'o')
+            plt.plot(self.ordered_param_set,
+                     self.global_frequency_set[:, i], 'o')
             fig.suptitle(vector_orientation, fontsize=12)
-            savename = vector_orientation + str(self.start_time) + " " + \
-                        str(self.stop_time)
+            plt.xlabel(self.param_name)
+            plt.ylabel("Frequency")
+            savename = f"{vector_orientation}_{self.param_name}_frequency {self.start_time}_{self.stop_time}"
+
             savename = os.path.join(self.result_directory, savename)
             self.save_object(fig, savename)
-        res_savepoint = os.path.join(self.result_directory, "resonant_frequencies.csv")
+
+            fig = plt.figure()
+            plt.plot(self.ordered_param_set,
+                     self.m_dict[vector_orientation], 'o')
+            fig.suptitle(vector_orientation, fontsize=12)
+            plt.xlabel(self.param_name)
+            plt.ylabel(f"Average {vector_orientation}")
+            savename = f"Average {vector_orientation}_{self.param_name} {self.start_time}_{self.stop_time}"
+            savename = os.path.join(self.result_directory, savename)
+            self.save_object(fig, savename)
+
+        res_savepoint = os.path.join(
+            self.result_directory, "resonant_frequencies.csv")
         with open(res_savepoint, 'w') as f:
             writer = csv.writer(f, delimiter=',')
-            writer.writerows(zip(self.ordered_param_set,
-                                 self.global_frequency_set[:, 0:]))
+            # params, freqs = zip(
+                # *sorted(self.ordered_param_set, self.global_frequency_set[:, 0]))
+            writer.writerows(zip(self.ordered_param_set, self.global_frequency_set[:, 0]))
 
     def resonance_peak_module(self):
         fig = plt.figure()
@@ -82,7 +100,8 @@ class ResonantFrequency(AnalysisUnit):
 
         self.save_object(fig2, savename)
 
-        res_savepoint = os.path.join(self.result_directory, "voltage_field_values.csv")
+        res_savepoint = os.path.join(
+            self.result_directory, "voltage_field_values.csv")
         with open(res_savepoint, 'w') as f:
             writer = csv.writer(f, delimiter=',')
             writer.writerows(zip(self.ordered_param_set,
@@ -99,11 +118,12 @@ class ResonantFrequency(AnalysisUnit):
         # performs specified data analysis
         try:
             savename = os.path.join(self.result_directory, str(param))
-            r_diff, m_voltage, mx, my, mz = self.standard_fourier_analysis(df, savename)
+            r_diff, m_voltage, mx, my, mz, avg_mx, avg_my, avg_mz = \
+                self.standard_fourier_analysis(df, savename)
         except ValueError as e:
             print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
             return [0, 0, param, 0, 0, 0]
-        return r_diff, m_voltage, param, mx, my, mz
+        return r_diff, m_voltage, param, mx, my, mz, avg_mx, avg_my, avg_mz
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):
         """
@@ -122,7 +142,8 @@ class ResonantFrequency(AnalysisUnit):
                             (data['TimeDriver::Simulation time'] < stop_time)]
 
     def voltage_calculation(self, df_limited, frequency):
-        avg_resistance = np.mean(df_limited['MF_Magnetoresistance::magnetoresistance'])
+        avg_resistance = np.mean(
+            df_limited['MF_Magnetoresistance::magnetoresistance'])
         power = 10e-6
         omega = 2 * np.pi * frequency
         phase = 0
@@ -168,7 +189,8 @@ class ResonantFrequency(AnalysisUnit):
         for col in cols:
             potential_fourier_data.append(np.fft.fft(df[col], axis=0))
         # fourier frequencies must be calculated first to know precise frequency
-        frequency_steps = np.fft.fftfreq(potential_fourier_data[0].size, d=time_step)
+        frequency_steps = np.fft.fftfreq(
+            potential_fourier_data[0].size, d=time_step)
         max_freq_set = []
         for freq_data in potential_fourier_data:
             freq_data = abs(freq_data)
