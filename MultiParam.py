@@ -68,9 +68,9 @@ class MultiParam(ResonantFrequency):
                 self.plot_saving("Mean voltage", dir_name, constant_param1[self.base_param2],
                                  constant_param1['M_volt'])
                 res_savepoint = os.path.join(dir_name, str(param_value).replace('-', 'm')
-                                             + "_Freq_result.csv")
+                                             + "_Freq_result_" + str(self.start_time) + "_" + str(self.stop_time) + ".csv")
                 constant_param1[[self.base_param2, 'Rpp_diff', 'M_volt']].to_csv(
-                    res_savepoint)
+                    res_savepoint, index=False)
         else:
             for param_value in self.merged_data[self.base_param1].unique():
                 print(param_value)
@@ -84,7 +84,7 @@ class MultiParam(ResonantFrequency):
                 res_savepoint = os.path.join(dir_name, "Resonant_frequencies_"
                                              + str(param_value).replace('-', 'm') + ".csv")
                 constant_param1[[self.base_param2, 'Fmx',
-                                 'Fmy', 'Fmz']].to_csv(res_savepoint)
+                                 'Fmy', 'Fmz']].to_csv(res_savepoint, index=False)
 
     def plot_saving(self, name, dir_name, array1, array2=None):
         fig = plt.figure()

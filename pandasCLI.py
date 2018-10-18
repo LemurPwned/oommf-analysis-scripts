@@ -53,6 +53,6 @@ class PandasCLI:
 
 
 if __name__ == "__main__":
-    directory = "3_2_3_0_sweep"
+    directory = r"D:\Dokumenty\Simulations\COUPLING_VBC_1500_900_42_AMP_5em5_SWEEP_1em5_FIXED_FREQ"
     pandas_cli = PandasCLI(d_directory=directory)
     pandas_cli.run_in_folder()
