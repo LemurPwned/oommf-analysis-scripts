@@ -67,11 +67,14 @@ class AnalysisUnit:
             '/') else os.path.basename(base_name[:-1])
         result_dir_name = dir_name + "_" + base_dir_name
         result_directory = os.path.join(base_name, result_dir_name)
-        if os.path.isdir(result_directory):
-            return result_directory
+        return self.create_dir(result_directory)
+
+    def create_dir(self, directory):
+        if os.path.isdir(directory):
+            return directory
         else:
-            os.mkdir(result_directory)
-            return result_directory
+            os.mkdir(directory)
+            return directory
 
     def search_directory_for_odt(self):
         """

@@ -60,8 +60,9 @@ class MultiParam(ResonantFrequency):
         if not dispersion:
             for param_value in self.merged_data[self.base_param1].unique():
                 print(param_value)
-                dir_name = self.manage_directory(self.result_directory, self.base_param1 +
-                                                 "_" + str(param_value))
+                dir_name = os.path.join(self.result_directory, self.base_param1 +
+                                        "_" + str(param_value))
+                self.create_dir(dir_name)
                 constant_param1 = self.merged_data[self.merged_data[self.base_param1] == param_value]
                 self.plot_saving("Rpp", dir_name, constant_param1[self.base_param2],
                                  constant_param1['Rpp_diff'])
