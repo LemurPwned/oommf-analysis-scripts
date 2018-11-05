@@ -1,12 +1,14 @@
 import argparse
 import json
 from multiprocessing import Pool
+from ParsingUtils import ParsingUtils
 
 
 class Interface:
     def __init__(self, specification):
         self.arg_list = specification['specification']
-        self.parsed_args = self.define_input_parameters(specification["description"])
+        self.parsed_args = self.define_input_parameters(
+            specification["description"])
         self.defined_parameters = [x['name'] for x in self.arg_list]
 
     def define_input_parameters(self, desc):
@@ -78,9 +80,11 @@ class ParsingStage:
 def asynchronous_pool_order(func, args, object_list):
     pool = Pool()
     output_list = []
+    mr_len = len(object_list)
     multiple_results = [pool.apply_async(func, (*args, object_type))
                         for object_type in object_list]
-    for result in multiple_results:
+    for i, result in enumerate(multiple_results):
         value = result.get()
         output_list.append(value)
+        ParsingUtils.flushed_loading_msg("none", i, mr_len)
     return output_list

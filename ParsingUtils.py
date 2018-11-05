@@ -1,7 +1,20 @@
+import sys
+import pandas as pd
+import time
+
 
 class ParsingUtils:
     def __init__(self):
         pass
+
+    @staticmethod
+    def flushed_loading_msg(msg, progress, max_val, bar_length=50):
+        mult = int(progress*bar_length/max_val)
+        if mult % 2 == 0:
+            load_val_eq = "="*mult
+            load_val_dot = "*"*(bar_length-mult)
+            print(
+                f"\r[{load_val_eq}{load_val_dot}] {int(progress*100/max_val)}%", flush=True, end="")
 
     def read_directory_as_df_file(self, filename):
         """
@@ -54,3 +67,9 @@ class ParsingUtils:
             df = pd.DataFrame.from_records(dataset, columns=cols)
             stages = len(lines) - 1
             return df, stages
+
+
+if __name__ == "__main__":
+    m = 1000000
+    for i in range(m):
+        ParsingUtils.flushed_loading_msg("none", i, m)
