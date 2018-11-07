@@ -1,6 +1,7 @@
 import sys
 import pandas as pd
 import time
+import numpy as np
 
 
 class ParsingUtils:
@@ -13,8 +14,12 @@ class ParsingUtils:
         if mult % 2 == 0:
             load_val_eq = "="*mult
             load_val_dot = "*"*(bar_length-mult)
-            print(
-                f"\r[{load_val_eq}{load_val_dot}] {int(progress*100/max_val)}%", flush=True, end="")
+            if msg is not None:
+                print(
+                    f"\r{msg} [{load_val_eq}{load_val_dot}] {int(progress*100/max_val)}%", flush=True, end="")
+            else:
+                print(
+                    f"\r[{load_val_eq}{load_val_dot}] {int(progress*100/max_val)}%", flush=True, end="")
 
     def read_directory_as_df_file(self, filename):
         """

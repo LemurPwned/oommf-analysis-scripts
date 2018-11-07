@@ -86,5 +86,5 @@ def asynchronous_pool_order(func, args, object_list):
     for i, result in enumerate(multiple_results):
         value = result.get()
         output_list.append(value)
-        ParsingUtils.flushed_loading_msg("none", i, mr_len)
+        ParsingUtils.flushed_loading_msg(f"Parsing...", i, mr_len)
     return output_list

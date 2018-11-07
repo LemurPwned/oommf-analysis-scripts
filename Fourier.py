@@ -38,6 +38,7 @@ class ResonantFrequency(AnalysisUnit):
 
         output = asynchronous_pool_order(self.local_analysis, (), file_names)
         output = np.array(output)
+        output[output[:, 2].argsort()] # sort using the second column, ie. params
         self.R_pp = output[:, 0]
         self.global_mean_voltages = output[:, 1]
         self.ordered_param_set = output[:, 2]
