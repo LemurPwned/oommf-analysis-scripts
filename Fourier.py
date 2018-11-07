@@ -38,14 +38,18 @@ class ResonantFrequency(AnalysisUnit):
 
         output = asynchronous_pool_order(self.local_analysis, (), file_names)
         output = np.array(output)
-        output[output[:, 2].argsort()] # sort using the second column, ie. params
+        # sort using the second column, ie. params
+        output = output[output[:, 2].argsort()]
         self.R_pp = output[:, 0]
         self.global_mean_voltages = output[:, 1]
         self.ordered_param_set = output[:, 2]
         self.global_frequency_set = output[:, 3:6]
         self.m_dict = {'mx': output[:, 6],
                        'my': output[:, 7],
-                       'mz': output[:, 8]}
+                       'mz': output[:, 8],
+                       'ax': output[:, 9],
+                       'ay': output[:, 10],
+                       'az': output[:, 11]}
         if self.dispersion:
             self.dispersion_module()
         else:
@@ -79,8 +83,16 @@ class ResonantFrequency(AnalysisUnit):
         with open(res_savepoint, 'w') as f:
             writer = csv.writer(f, delimiter=',')
             # params, freqs = zip(
-                # *sorted(self.ordered_param_set, self.global_frequency_set[:, 0]))
-            writer.writerows(zip(self.ordered_param_set, self.global_frequency_set[:, 0]))
+            # *sorted(self.ordered_param_set, self.global_frequency_set[:, 0]))
+            writer.writerow(
+                [self.param_name, 'mx', 'my', 'mz', 'ax', 'ay', 'az'])
+            writer.writerows(zip(self.ordered_param_set,
+                                 self.global_frequency_set[:, 0],
+                                 self.global_frequency_set[:, 1],
+                                 self.global_frequency_set[:, 2],
+                                 self.m_dict['ax'],
+                                 self.m_dict['ay'],
+                                 self.m_dict['az']))
 
     def resonance_peak_module(self):
         fig = plt.figure()
@@ -119,12 +131,12 @@ class ResonantFrequency(AnalysisUnit):
         # performs specified data analysis
         try:
             savename = os.path.join(self.result_directory, str(param))
-            r_diff, m_voltage, mx, my, mz, avg_mx, avg_my, avg_mz = \
+            r_diff, m_voltage, mx, my, mz, avg_mx, avg_my, avg_mz, ax, ay, az = \
                 self.standard_fourier_analysis(df, savename)
         except ValueError as e:
             print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
             return [0, 0, param, 0, 0, 0]
-        return r_diff, m_voltage, param, mx, my, mz, avg_mx, avg_my, avg_mz
+        return r_diff, m_voltage, param, mx, my, mz, avg_mx, avg_my, avg_mz, ax, ay, az
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):
         """

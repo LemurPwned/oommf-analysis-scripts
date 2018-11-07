@@ -176,7 +176,19 @@ class AnalysisUnit:
         avg_my = np.mean(shortened_df['TimeDriver::my'])
         avg_mz = np.mean(shortened_df['TimeDriver::mz'])
 
-        return r_diff, m_voltage, mx, my, mz, avg_mx, avg_my, avg_mz
+        ax, ay, az = self.calculate_angles(shortened_df)
+        return r_diff, m_voltage, mx, my, mz, avg_mx, avg_my, avg_mz, ax, ay, az
+
+    def calculate_angles(self, df):
+        mag = np.mean(np.sqrt(np.power(df['TimeDriver::mx'], 2) +
+                              np.power(df['TimeDriver::my'], 2) +
+                              np.power(df['TimeDriver::mz'], 2)
+                              )
+                      )
+        ang_mx = np.arccos(np.mean(df['TimeDriver::mx']/mag))*180/np.pi
+        ang_my = np.arccos(np.mean(df['TimeDriver::my']/mag))*180/np.pi
+        ang_mz = np.arccos(np.mean(df['TimeDriver::mz']/mag))*180/np.pi
+        return (ang_mx, ang_my, ang_mz)
 
     def set_resonant_frequency(self, extracted_frequency):
         self.resonant_frequency = extracted_frequency
