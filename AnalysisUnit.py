@@ -5,8 +5,9 @@ import json
 import os
 import glob
 import pickle
-
+import sys
 from Interface import Interface, ParsingStage
+from ParsingUtils import ParsingUtils
 
 
 class AnalysisUnit:
@@ -90,70 +91,14 @@ class AnalysisUnit:
             print(filename)
         return filename_candidates
 
-    def read_directory_as_df_file(self, filename):
-        """
-        Reads .odt file
-        :param: filename is .odt file path
-        :return: DataFrame and stages number
-        """
-        if filename is None:
-            print("\nOdt file has not been found")
-            return
-        if not filename.endswith(".odt"):
-            print("\nWrong file type passed, only .odt")
-            return
-        else:
-            header_lines = 4
-            header = []
-            i = 0
-            with open(filename, 'r') as f:
-                while i < header_lines:
-                    lines = f.readline()
-                    header.append(lines)
-                    i += 1
-                lines = f.readlines()
-            f.close()
-            cols = header[-1]
-            cols = cols.replace("} ", "")
-            cols = cols.replace("{", "")
-            cols = cols.replace("MF", "Oxs_MF")
-            cols = cols.replace("PBC", "Oxs_PBC")
-            cols = cols.split("Oxs_")
-            del cols[0]
-            cols = [x.strip() for x in cols]
-            cols = [x.replace("}", "") for x in cols]
-            dataset = []
-            lines = [x.strip() for x in lines]
-            lines = [x.split(' ') for x in lines]
-            for line in lines:
-                temp_line = []
-                for el in line:
-                    try:
-                        new_el = float(el)
-                        temp_line.append(new_el)
-                    except:
-                        pass
-                temp_line = np.array(temp_line, dtype=np.float32)
-                if temp_line.shape[0] == 0:
-                    continue
-                dataset.append(temp_line)
-
-            dataset = np.array(dataset[1:])
-            df = pd.DataFrame.from_records(dataset, columns=cols)
-            # save data frame
-            stages = len(lines) - 1
-            if not self.save_object(df, filename.replace(".odt", "stages")):
-                print("Could not save {}".format(filename))
-            return df, stages
-
     def pickle_load_procedure(self, filename):
         # reads each .odt file and returns pandas DataFrame object
         pickle_path = os.path.join(os.path.dirname(filename),
                                    os.path.basename(filename).replace(".odt",
                                                                       "stages.pkl"))
         if self.clear or (not os.path.isfile(pickle_path)):
-            print("Pickle not found, parsing ... {}".format(filename))
-            df, stages = self.read_directory_as_df_file(filename)
+            print("\rPickle not found, parsing ... {}".format(filename))
+            df, _ = ParsingUtils.get_odt_file_data(filename)
         else:
             # if found, load pickle
             with open(pickle_path, 'rb') as f:
@@ -171,18 +116,18 @@ class AnalysisUnit:
                                                 self.resonant_frequency)
         frequency_set = self.find_max_frequency(shortened_df, self.time_step)
         avg_m = [np.mean(shortened_df[m]) for m in [
-            'TimeDriver::mx', 'TimeDriver::my', 'TimeDriver::mz']]
+            'Oxs_TimeDriver::mx', 'Oxs_TimeDriver::my', 'Oxs_TimeDriver::mz']]
         angs = self.calculate_angles(shortened_df)
         return (r_diff, m_voltage, *frequency_set[:, 0], *avg_m, *angs)
 
     def calculate_angles(self, df):
-        mag = np.mean(np.sqrt(np.power(df['TimeDriver::mx'], 2) +
-                              np.power(df['TimeDriver::my'], 2) +
-                              np.power(df['TimeDriver::mz'], 2)
-                              )
-                      )
+        mag = np.mean(np.sqrt(np.sum(
+            [np.power(df[m], 2)
+             for m in ['Oxs_TimeDriver::mx', 'Oxs_TimeDriver::my', 'Oxs_TimeDriver::mz']])
+        )
+        )
         angs = [np.arccos(np.mean(df[m]/mag))*180/np.pi
-                for m in ['TimeDriver::mx', 'TimeDriver::my', 'TimeDriver::mz']]
+                for m in ['Oxs_TimeDriver::mx', 'Oxs_TimeDriver::my', 'Oxs_TimeDriver::mz']]
         return angs
 
     def set_resonant_frequency(self, extracted_frequency):

@@ -2,6 +2,7 @@ import sys
 import pandas as pd
 import time
 import numpy as np
+from colorama import Fore, Style
 
 
 class ParsingUtils:
@@ -10,30 +11,53 @@ class ParsingUtils:
 
     @staticmethod
     def flushed_loading_msg(msg, progress, max_val, bar_length=50):
-        mult = int(progress*bar_length/max_val)
-        if mult % 2 == 0:
+        mult = int(progress*bar_length/max_val)+1
+        if mult % 5 == 0:
             load_val_eq = "="*mult
             load_val_dot = "*"*(bar_length-mult)
             if msg is not None:
                 print(
-                    f"\r{msg} [{load_val_eq}{load_val_dot}] {int(progress*100/max_val)}%", flush=True, end="")
+                    f"\r{Fore.LIGHTMAGENTA_EX}{msg}{Style.RESET_ALL} [{load_val_eq}{load_val_dot}] {Fore.LIGHTCYAN_EX}{int(progress*100/max_val)}%\n{Style.RESET_ALL}", flush=True, end="")
             else:
                 print(
-                    f"\r[{load_val_eq}{load_val_dot}] {int(progress*100/max_val)}%", flush=True, end="")
+                    f"\r[{load_val_eq}{load_val_dot}] {Fore.GREEN}{int(progress*100/max_val)}%{Style.RESET_ALL}\n", flush=True, end="")
 
-    def read_directory_as_df_file(self, filename):
+    @staticmethod
+    def parse_odt_col(line):
         """
-        Reads .odt file
-        :param: filename is .odt file path
-        :return: DataFrame and stages number
+        This extracts a single column from a odt file 
+        OOMMF formatting support
         """
-        if filename is None:
-            print("\nOdt file has not been found")
-            return
-        if not filename.endswith(".odt"):
-            print("\nWrong file type passed, only .odt")
-            return
-        else:
+        cols = []
+        line = line.replace('# Columns: ', '')
+        while line != "":
+            if line[0] == '{':
+                patch = line[1:line.index('}')]
+                if patch != '':
+                    cols.append(patch)
+                line = line[line.index('}')+1:]
+            else:
+                try:
+                    patch = line[:line.index(' ')]
+                    if patch != '':
+                        cols.append(patch)
+                    line = line[line.index(' ')+1:]
+                except ValueError:
+                    line = ""
+                    break
+        return cols
+
+    @staticmethod
+    def get_odt_file_data(filename):
+        """
+        Reads .odt of .txt file
+        @param: filename is .odt file path
+        @return: dataFrame and stages number
+        """
+        if filename.endswith('.txt'):
+            df = pd.read_table(filename)
+            return df, len(df)
+        elif filename.endswith('.odt'):
             header_lines = 4
             header = []
             i = 0
@@ -43,38 +67,29 @@ class ParsingUtils:
                     header.append(lines)
                     i += 1
                 lines = f.readlines()
-            f.close()
             cols = header[-1]
-            cols = cols.replace("} ", "")
-            cols = cols.replace("{", "")
-            cols = cols.replace("MF", "Oxs_MF")
-            cols = cols.split("Oxs_")
-            del cols[0]
-            cols = [x.strip() for x in cols]
-            cols = [x.replace("}", "") for x in cols]
+            cols = ParsingUtils.parse_odt_col(cols)
             dataset = []
             lines = [x.strip() for x in lines]
             lines = [x.split(' ') for x in lines]
             for line in lines:
                 temp_line = []
-                for el in line:
+                for el in line[:-1]:
                     try:
                         new_el = float(el)
                         temp_line.append(new_el)
                     except:
                         pass
-                temp_line = np.array(temp_line, dtype=np.float32)
-                if temp_line.shape[0] == 0:
-                    continue
                 dataset.append(temp_line)
-
-            dataset = np.array(dataset[1:])
+            dataset = dataset[:-1]
             df = pd.DataFrame.from_records(dataset, columns=cols)
             stages = len(lines) - 1
             return df, stages
+        else:
+            raise ValueError(f"Unsupported extension {filename}")
 
 
 if __name__ == "__main__":
     m = 1000000
     for i in range(m):
-        ParsingUtils.flushed_loading_msg("none", i, m)
+        ParsingUtils.flushed_loading_msg(None, i, m)

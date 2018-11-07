@@ -128,12 +128,12 @@ class MultiParam(ResonantFrequency):
         try:
             savename = os.path.join(self.result_directory, str(param1[1]) + "_" +
                                     str(param2[1]))
-            r_diff, m_voltage, mx, my, mz, _, _, _ = self.standard_fourier_analysis(
-                df, savename)
+            return (param1[1], param2[1], *self.standard_fourier_analysis(df, savename))
+
         except (ValueError, KeyError) as e:
             print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
             return [param1[1], param2[1], 0, 0, 0, 0, 0]
-        return [param1[1], param2[1], r_diff, m_voltage, mx, my, mz]
+        return [param1[1], param2[1], 0, 0, 0, 0, 0]
 
 
 if __name__ == "__main__":

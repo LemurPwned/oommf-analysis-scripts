@@ -8,6 +8,7 @@ import pickle
 
 from Interface import asynchronous_pool_order
 from AnalysisUnit import AnalysisUnit
+from colorama import Fore, Style
 
 
 class ResonantFrequency(AnalysisUnit):
@@ -113,14 +114,16 @@ class ResonantFrequency(AnalysisUnit):
         try:
             df = self.pickle_load_procedure(filename)
         except AssertionError as e:
-            print("An error occurred of type: {} in file: {}".format(e, filename))
+            print(
+                f"{Fore.RED}An error occurred of type: {e} in file: {filename}{Style.RESET_ALL}")
             return [0, 0, param, 0, 0, 0]
         # performs specified data analysis
         try:
             savename = os.path.join(self.result_directory, str(param))
             return (param, *self.standard_fourier_analysis(df, savename))
         except ValueError as e:
-            print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
+            print(
+                f"{Fore.RED}PROBLEM ENCOUNTERED IN {filename} of {e}{Style.RESET_ALL}")
             return [0, 0, param, 0, 0, 0]
         return [0, 0, param, 0, 0, 0]
 
@@ -135,10 +138,10 @@ class ResonantFrequency(AnalysisUnit):
         if start_time is None:
             return data
         if stop_time is None:
-            return data.loc[(data['TimeDriver::Simulation time'] > start_time)]
+            return data.loc[(data['Oxs_TimeDriver::Simulation time'] > start_time)]
         else:
-            return data.loc[(data['TimeDriver::Simulation time'] >= start_time) &
-                            (data['TimeDriver::Simulation time'] < stop_time)]
+            return data.loc[(data['Oxs_TimeDriver::Simulation time'] >= start_time) &
+                            (data['Oxs_TimeDriver::Simulation time'] < stop_time)]
 
     def voltage_calculation(self, df_limited, frequency):
         avg_resistance = np.mean(
@@ -147,7 +150,7 @@ class ResonantFrequency(AnalysisUnit):
         omega = 2 * np.pi * frequency
         phase = 0
         amplitude = np.sqrt(power / avg_resistance)
-        current = amplitude * np.sin(omega * df_limited['TimeDriver::Simulation time']
+        current = amplitude * np.sin(omega * df_limited['Oxs_TimeDriver::Simulation time']
                                      + phase)
         voltage = df_limited['MF_Magnetoresistance::magnetoresistance'] * current
         mean_voltage = np.mean(voltage)
@@ -174,9 +177,9 @@ class ResonantFrequency(AnalysisUnit):
             plt.stem(frequency_step, np.abs(fourier_piece))
             self.save_object(fig2, savename + "_" + title)
 
-    def find_max_frequency(self, df, time_step=1e-11, cols=('TimeDriver::mx',
-                                                            'TimeDriver::my',
-                                                            'TimeDriver::mz')):
+    def find_max_frequency(self, df, time_step=1e-11, cols=('Oxs_TimeDriver::mx',
+                                                            'Oxs_TimeDriver::my',
+                                                            'Oxs_TimeDriver::mz')):
         """
         Values given in columns must have common sampling frequency
         :param df: DataFrame object containing columns specified in cols
