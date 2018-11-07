@@ -58,7 +58,7 @@ class ResonantFrequency(AnalysisUnit):
             fig.suptitle(vector_orientation, fontsize=12)
             plt.xlabel(self.param_name)
             plt.ylabel("Frequency")
-            savename = f"{vector_orientation}_{self.param_name}_frequency {self.start_time}_{self.stop_time}"
+            savename = f"{vector_orientation}_{self.param_name}_frequency_{self.start_time}_{self.stop_time}"
 
             savename = os.path.join(self.result_directory, savename)
             self.save_object(fig, savename)
@@ -69,7 +69,7 @@ class ResonantFrequency(AnalysisUnit):
             fig.suptitle(vector_orientation, fontsize=12)
             plt.xlabel(self.param_name)
             plt.ylabel(f"Average {vector_orientation}")
-            savename = f"Average {vector_orientation}_{self.param_name} {self.start_time}_{self.stop_time}"
+            savename = f"Average {vector_orientation}_{self.param_name}_{self.start_time}_{self.stop_time}"
             savename = os.path.join(self.result_directory, savename)
             self.save_object(fig, savename)
 
