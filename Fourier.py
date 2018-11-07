@@ -38,29 +38,24 @@ class ResonantFrequency(AnalysisUnit):
 
         output = asynchronous_pool_order(self.local_analysis, (), file_names)
         output = np.array(output)
-        # sort using the second column, ie. params
-        output = output[output[:, 2].argsort()]
-        self.R_pp = output[:, 0]
-        self.global_mean_voltages = output[:, 1]
-        self.ordered_param_set = output[:, 2]
-        self.global_frequency_set = output[:, 3:6]
-        self.m_dict = {'mx': output[:, 6],
-                       'my': output[:, 7],
-                       'mz': output[:, 8],
-                       'ax': output[:, 9],
-                       'ay': output[:, 10],
-                       'az': output[:, 11]}
+        # sort using the first column, ie. params
+        output = output[output[:, 0].argsort()]
+        self.extracted_data_cols = [
+            self.param_name, 'Rpp', 'Mvolt', 'Fx', 'Fy', 'Fz', 'mx', 'my', 'mz', 'ax', 'ay', 'az']
+        self.p_dict = {
+            col: output[:, i] for i, col in enumerate(self.extracted_data_cols)
+        }
         if self.dispersion:
             self.dispersion_module()
         else:
             self.resonance_peak_module()
 
     def dispersion_module(self):
-        for i, vector_orientation in enumerate(['mx', 'my', 'mz']):
+        for i, vector_orientation in enumerate(['x', 'y', 'z']):
             fig = plt.figure()
-            plt.plot(self.ordered_param_set,
-                     self.global_frequency_set[:, i], 'o')
-            fig.suptitle(vector_orientation, fontsize=12)
+            plt.plot(self.p_dict[self.param_name],
+                     self.p_dict['F' + vector_orientation], 'o')
+            fig.suptitle(f"Frequency {vector_orientation}", fontsize=12)
             plt.xlabel(self.param_name)
             plt.ylabel("Frequency")
             savename = f"{vector_orientation}_{self.param_name}_frequency_{self.start_time}_{self.stop_time}"
@@ -69,12 +64,12 @@ class ResonantFrequency(AnalysisUnit):
             self.save_object(fig, savename)
 
             fig = plt.figure()
-            plt.plot(self.ordered_param_set,
-                     self.m_dict[vector_orientation], 'o')
-            fig.suptitle(vector_orientation, fontsize=12)
+            plt.plot(self.p_dict[self.param_name],
+                     self.p_dict['m' + vector_orientation], 'o')
+            fig.suptitle(f"Average_m{vector_orientation}", fontsize=12)
             plt.xlabel(self.param_name)
-            plt.ylabel(f"Average {vector_orientation}")
-            savename = f"Average {vector_orientation}_{self.param_name}_{self.start_time}_{self.stop_time}"
+            plt.ylabel(f"Average_m{vector_orientation}")
+            savename = f"Average_m{vector_orientation}_{self.param_name}_{self.start_time}_{self.stop_time}"
             savename = os.path.join(self.result_directory, savename)
             self.save_object(fig, savename)
 
@@ -82,21 +77,13 @@ class ResonantFrequency(AnalysisUnit):
             self.result_directory, "resonant_frequencies.csv")
         with open(res_savepoint, 'w') as f:
             writer = csv.writer(f, delimiter=',')
-            # params, freqs = zip(
-            # *sorted(self.ordered_param_set, self.global_frequency_set[:, 0]))
-            writer.writerow(
-                [self.param_name, 'mx', 'my', 'mz', 'ax', 'ay', 'az'])
-            writer.writerows(zip(self.ordered_param_set,
-                                 self.global_frequency_set[:, 0],
-                                 self.global_frequency_set[:, 1],
-                                 self.global_frequency_set[:, 2],
-                                 self.m_dict['ax'],
-                                 self.m_dict['ay'],
-                                 self.m_dict['az']))
+            save_cols = [self.param_name, 'Fx', 'Fy', 'Fz', 'ax', 'ay', 'az']
+            writer.writerow(save_cols)
+            writer.writerows(zip(*map(lambda x: self.p_dict[x], save_cols)))
 
     def resonance_peak_module(self):
         fig = plt.figure()
-        plt.plot(self.ordered_param_set, self.R_pp, 'o')
+        plt.plot(self.p_dict[self.param_name], self.p_dict['Rpp'], 'o')
         fig.suptitle("R_pp(param)", fontsize=12)
 
         savename = "Rpp " + str(self.start_time) + " " + str(self.stop_time)
@@ -105,7 +92,7 @@ class ResonantFrequency(AnalysisUnit):
         self.save_object(fig, savename)
 
         fig2 = plt.figure()
-        plt.plot(self.ordered_param_set, self.global_mean_voltages, 'o')
+        plt.plot(self.p_dict[self.param_name], self.p_dict['Mvolt'], 'o')
         fig2.suptitle("Voltage(scale)", fontsize=12)
 
         savename = "Vol " + str(self.start_time) + " " + str(self.stop_time)
@@ -117,8 +104,8 @@ class ResonantFrequency(AnalysisUnit):
             self.result_directory, "voltage_field_values.csv")
         with open(res_savepoint, 'w') as f:
             writer = csv.writer(f, delimiter=',')
-            writer.writerows(zip(self.ordered_param_set,
-                                 self.global_mean_voltages))
+            writer.writerows(zip(self.p_dict[self.param_name],
+                                 self.p_dict['Mvolt']))
 
     def local_analysis(self, filename):
         param = self.extract_parameter_type(filename, self.param_name)
@@ -131,12 +118,11 @@ class ResonantFrequency(AnalysisUnit):
         # performs specified data analysis
         try:
             savename = os.path.join(self.result_directory, str(param))
-            r_diff, m_voltage, mx, my, mz, avg_mx, avg_my, avg_mz, ax, ay, az = \
-                self.standard_fourier_analysis(df, savename)
+            return (param, *self.standard_fourier_analysis(df, savename))
         except ValueError as e:
             print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
             return [0, 0, param, 0, 0, 0]
-        return r_diff, m_voltage, param, mx, my, mz, avg_mx, avg_my, avg_mz, ax, ay, az
+        return [0, 0, param, 0, 0, 0]
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):
         """
