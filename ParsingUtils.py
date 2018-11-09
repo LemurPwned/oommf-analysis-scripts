@@ -2,35 +2,46 @@ import sys
 import pandas as pd
 import time
 import numpy as np
-from colorama import Fore, Style
+from color_term import ColorCodes
+
+
+class AnalysisException(Exception):
+    def __init__(self, msg, filename, null_val=None):
+        self.filename = filename
+        self.msg = msg
+        self.null_val = null_val
+
+    def __str__(self):
+        return f"Error: {self.msg} found in file: {self.filename} "
 
 
 class ParsingUtils:
-    def __init__(self):
-        pass
 
     @staticmethod
-    def flushed_loading_msg(msg, progress, max_val, bar_length=50):
+    def flushed_loading_msg(msg, progress, max_val, bar_length=50, err_msg=""):
         mult = int(progress*bar_length/max_val)+1
         if mult % 5 == 0:
             load_val_eq = "="*mult
             load_val_dot = "*"*(bar_length-mult)
+            err_msg = f"{ColorCodes.RED}{err_msg}{ColorCodes.RESET_ALL}"
             if msg is not None:
                 print(
-                    f"\r{Fore.LIGHTMAGENTA_EX}{msg}{Style.RESET_ALL} [{load_val_eq}{load_val_dot}] {Fore.LIGHTCYAN_EX}{int(progress*100/max_val)}%\n{Style.RESET_ALL}", flush=True, end="")
+                    f"\r{ColorCodes.BLUE}{msg}{ColorCodes.RESET_ALL} [{load_val_eq}{load_val_dot}] {ColorCodes.YELLOW}{int(progress*100/max_val)}%{ColorCodes.RESET_ALL} \t{err_msg}",
+                    flush=True, end="")
+
             else:
                 print(
-                    f"\r[{load_val_eq}{load_val_dot}] {Fore.GREEN}{int(progress*100/max_val)}%{Style.RESET_ALL}\n", flush=True, end="")
+                    f"\r[{load_val_eq}{load_val_dot}] {ColorCodes.GREEN}{int(progress*100/max_val)}%{ColorCodes.RESET_ALL}", flush=True, end="")
 
     @staticmethod
     def parse_odt_col(line):
         """
-        This extracts a single column from a odt file 
+        This extracts a single column from a odt file
         OOMMF formatting support
         """
         cols = []
         line = line.replace('# Columns: ', '')
-        while line != "":
+        while line != '':
             if line[0] == '{':
                 patch = line[1:line.index('}')]
                 if patch != '':
@@ -43,6 +54,9 @@ class ParsingUtils:
                         cols.append(patch)
                     line = line[line.index(' ')+1:]
                 except ValueError:
+                    if line != "" and line != '\n':
+                        # last trailing line
+                        cols.append(patch)
                     line = ""
                     break
         return cols
@@ -66,6 +80,7 @@ class ParsingUtils:
                     lines = f.readline()
                     header.append(lines)
                     i += 1
+                units = f.readline()
                 lines = f.readlines()
             cols = header[-1]
             cols = ParsingUtils.parse_odt_col(cols)
@@ -74,7 +89,7 @@ class ParsingUtils:
             lines = [x.split(' ') for x in lines]
             for line in lines:
                 temp_line = []
-                for el in line[:-1]:
+                for el in line:
                     try:
                         new_el = float(el)
                         temp_line.append(new_el)
@@ -92,4 +107,4 @@ class ParsingUtils:
 if __name__ == "__main__":
     m = 1000000
     for i in range(m):
-        ParsingUtils.flushed_loading_msg(None, i, m)
+        ParsingUtils.flushed_loading_msg("MESSAGE", i, m)

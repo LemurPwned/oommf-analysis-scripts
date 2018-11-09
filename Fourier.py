@@ -6,6 +6,7 @@ import sys
 import csv
 import pickle
 
+from ParsingUtils import AnalysisException
 from Interface import asynchronous_pool_order
 from AnalysisUnit import AnalysisUnit
 from colorama import Fore, Style
@@ -36,7 +37,6 @@ class ResonantFrequency(AnalysisUnit):
         # ask for all .odt files in the sub-roots of a specified directory
         file_names = self.search_directory_for_odt()
         self.set_parameters()
-
         output = asynchronous_pool_order(self.local_analysis, (), file_names)
         output = np.array(output)
         # sort using the first column, ie. params
@@ -114,17 +114,15 @@ class ResonantFrequency(AnalysisUnit):
         try:
             df = self.pickle_load_procedure(filename)
         except AssertionError as e:
-            print(
-                f"{Fore.RED}An error occurred of type: {e} in file: {filename}{Style.RESET_ALL}")
-            return [0, 0, param, 0, 0, 0]
+            raise AnalysisException(e, filename, null_val=[
+                                    0, 0, param, 0, 0, 0])
         # performs specified data analysis
         try:
             savename = os.path.join(self.result_directory, str(param))
             return (param, *self.standard_fourier_analysis(df, savename))
         except ValueError as e:
-            print(
-                f"{Fore.RED}PROBLEM ENCOUNTERED IN {filename} of {e}{Style.RESET_ALL}")
-            return [0, 0, param, 0, 0, 0]
+            raise AnalysisException(e, filename, null_val=[
+                                    0, 0, param, 0, 0, 0])
         return [0, 0, param, 0, 0, 0]
 
     def cutout_sample(self, data, start_time=0.00, stop_time=100.00):

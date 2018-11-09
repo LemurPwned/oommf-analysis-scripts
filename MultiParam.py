@@ -6,8 +6,8 @@ import sys
 import csv
 import pickle
 import pandas as pd
-
 from Interface import asynchronous_pool_order
+from ParsingUtils import AnalysisException
 from Fourier import ResonantFrequency
 
 
@@ -68,8 +68,9 @@ class MultiParam(ResonantFrequency):
                                  constant_param1['Rpp_diff'])
                 self.plot_saving("Mean voltage", dir_name, constant_param1[self.base_param2],
                                  constant_param1['M_volt'])
-                res_savepoint = os.path.join(dir_name, str(param_value).replace('-', 'm')
-                                             + "_Freq_result_" + str(self.start_time) + "_" + str(self.stop_time) + ".csv")
+                sname = f"{str(param_value).replace('-', 'm')}_Freq_result_{self.start_time}_{self.stop_time}.csv"
+                res_savepoint = os.path.join(dir_name, str(
+                    param_value).replace('-', 'm'), sname)
                 constant_param1[[self.base_param2, 'Rpp_diff', 'M_volt']].to_csv(
                     res_savepoint, index=False)
         else:
@@ -82,8 +83,8 @@ class MultiParam(ResonantFrequency):
                     self.plot_saving(vector_orientation, dir_name,
                                      constant_param1[self.base_param2],
                                      constant_param1[vector_orientation])
-                res_savepoint = os.path.join(dir_name, "Resonant_frequencies_"
-                                             + str(param_value).replace('-', 'm') + ".csv")
+                sname = f"Resonant_frequencies_{str(param_value).replace('-', 'm')}.csv"
+                res_savepoint = os.path.join(dir_name, sname)
                 constant_param1[[self.base_param2, 'Fmx',
                                  'Fmy', 'Fmz']].to_csv(res_savepoint, index=False)
 
@@ -123,16 +124,16 @@ class MultiParam(ResonantFrequency):
         try:
             df = self.pickle_load_procedure(filename)
         except AssertionError as e:
-            print("An error occurred {} in {}".format(e, filename))
-            return [param1[1], param2[1], 0, 0, 0, 0, 0]
+            raise AnalysisException(e, filename, null_val=[
+                                    param1[1], param2[1], 0, 0, 0, 0, 0])
         try:
             savename = os.path.join(self.result_directory, str(param1[1]) + "_" +
                                     str(param2[1]))
-            return (param1[1], param2[1], *self.standard_fourier_analysis(df, savename))
+            return (param1[1], param2[1], *self.standard_fourier_analysis(df, savename)[:2])
 
         except (ValueError, KeyError) as e:
-            print("PROBLEM ENCOUNTERED IN {} of {}".format(filename, e))
-            return [param1[1], param2[1], 0, 0, 0, 0, 0]
+            raise AnalysisException(e, filename, null_val=[
+                                    param1[1], param2[1], 0, 0, 0, 0, 0])
         return [param1[1], param2[1], 0, 0, 0, 0, 0]
 
 

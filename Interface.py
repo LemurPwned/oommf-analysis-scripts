@@ -1,7 +1,8 @@
 import argparse
 import json
 from multiprocessing import Pool
-from ParsingUtils import ParsingUtils
+from ParsingUtils import ParsingUtils, AnalysisException
+from color_term import ColorCodes
 
 
 class Interface:
@@ -52,7 +53,8 @@ class ParsingStage:
                 if getattr(self.args, arg_name) is not None:
                     self.set_dict_param(arg_name, getattr(self.args, arg_name))
             except TypeError:
-                print("ASKED FOR NON-EXISTENT VALUE {}".format(arg_name))
+                print(
+                    f"{ColorCodes.RED}ASKED FOR NON-EXISTENT VALUE {arg_name}{ColorCodes.RESET_ALL}")
 
     def set_dict_param(self, param_name, param_val):
         self.resultant_dict[param_name] = param_val
@@ -60,8 +62,8 @@ class ParsingStage:
     def read_json_dict_param(self, filepath):
         with open(filepath, 'r') as f:
             default_dict = json.loads(f.read())
-            print("CORRECT DICT TYPE? {}".format(str(type(default_dict))))
-        print("DEFAULT DICTIONARY PARAMS DETECTED...\n{}".format(default_dict))
+            print(f"CORRECT DICT TYPE? {type(default_dict)}")
+        print(f"DEFAULT DICTIONARY PARAMS DETECTED...\n{default_dict}")
 
         if (not isinstance(default_dict, dict)) or \
                 (not isinstance(self.resultant_dict, dict)):
@@ -84,7 +86,13 @@ def asynchronous_pool_order(func, args, object_list):
     multiple_results = [pool.apply_async(func, (*args, object_type))
                         for object_type in object_list]
     for i, result in enumerate(multiple_results):
-        value = result.get()
-        output_list.append(value)
-        ParsingUtils.flushed_loading_msg(f"Parsing...", i, mr_len)
+        try:
+            value = result.get()
+            output_list.append(value)
+            ParsingUtils.flushed_loading_msg(
+                f"Parsing...", i, mr_len, err_msg=e)
+        except AnalysisException as e:
+            ParsingUtils.flushed_loading_msg(
+                f"Parsing...", i, mr_len, err_msg=e)
+            output_list.append(e.null_val)
     return output_list

@@ -97,7 +97,7 @@ class AnalysisUnit:
                                    os.path.basename(filename).replace(".odt",
                                                                       "stages.pkl"))
         if self.clear or (not os.path.isfile(pickle_path)):
-            print("\rPickle not found, parsing ... {}".format(filename))
+            # print("\rPickle not found, parsing ... {}".format(filename))
             df, _ = ParsingUtils.get_odt_file_data(filename)
         else:
             # if found, load pickle
