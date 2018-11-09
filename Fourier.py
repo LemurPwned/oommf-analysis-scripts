@@ -6,10 +6,9 @@ import sys
 import csv
 import pickle
 
-from ParsingUtils import AnalysisException
+from ParsingUtils import AnalysisException, ColorCodes
 from Interface import asynchronous_pool_order
 from AnalysisUnit import AnalysisUnit
-from colorama import Fore, Style
 
 
 class ResonantFrequency(AnalysisUnit):
@@ -21,7 +20,7 @@ class ResonantFrequency(AnalysisUnit):
         else:
             # prepare resulting directory
             self.result_directory = self.manage_directory(self.directory)
-        print("FINAL VALUES: {}".format(self.startup_dict))
+        print(f"FINAL VALUES: {self.startup_dict}")
         self.param_sweep = None
         self.ordered_param_set = []
         self.png = ".png"

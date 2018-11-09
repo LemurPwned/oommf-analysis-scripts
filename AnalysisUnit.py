@@ -8,6 +8,7 @@ import pickle
 import sys
 from Interface import Interface, ParsingStage
 from ParsingUtils import ParsingUtils
+from color_term import ColorCodes
 
 
 class AnalysisUnit:
@@ -84,11 +85,13 @@ class AnalysisUnit:
         """
         directory_roots = os.path.join(self.directory, '*/*.odt')
         filename_candidates = glob.glob(directory_roots, recursive=True)
-        print("{} file candidates found...".format(len(filename_candidates)))
+        print(f"{ColorCodes.CYAN}{len(filename_candidates){ColorCodes.RESET_ALL}} file candidates found...")
+        print(
+            f"{ColorCodes.MAGENTA}ROOT DIRECTORY{ColorCodes.RESET_ALL} {directory_roots}")
         if len(filename_candidates) == 0:
+            print(
+                f"{ColorCodes.RED}No files to analyze located ...{ColorCodes.RESET_ALL}")
             quit()
-        for filename in filename_candidates:
-            print(filename)
         return filename_candidates
 
     def pickle_load_procedure(self, filename):

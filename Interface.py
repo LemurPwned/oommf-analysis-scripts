@@ -90,7 +90,7 @@ def asynchronous_pool_order(func, args, object_list):
             value = result.get()
             output_list.append(value)
             ParsingUtils.flushed_loading_msg(
-                f"Parsing...", i, mr_len, err_msg=e)
+                f"Parsing...", i, mr_len)
         except AnalysisException as e:
             ParsingUtils.flushed_loading_msg(
                 f"Parsing...", i, mr_len, err_msg=e)
