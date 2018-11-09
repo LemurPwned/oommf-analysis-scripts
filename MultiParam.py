@@ -28,6 +28,7 @@ class MultiParam(ResonantFrequency):
 
         self.os_type = "windows" if "win" in sys.platform else "linux"
         self.delimiter = "/" if self.os_type == "linux" else "\\"
+        self.zerout = [0 for i in range(len(self.base_data_cols))]
 
     def initialize_analysis(self):
         file_names = self.search_directory_for_odt()
@@ -37,10 +38,12 @@ class MultiParam(ResonantFrequency):
 
         output = asynchronous_pool_order(
             self.multi_parameter_analysis, (), file_names)
-        self.merged_data = pd.DataFrame(output, columns=[self.base_param1,
-                                                         self.base_param2,
-                                                         'Rpp_diff',
-                                                         'M_volt', 'Fmx', 'Fmy', 'Fmz'])
+        self.extracted_data_cols = [self.base_param1,
+                                    self.base_param2]
+        self.extracted_data_cols.extend(self.base_data_cols)
+        # ORDER is (r_diff, m_voltage, *frequency_set[:, 0], *avg_m, *angs)
+        self.merged_data = pd.DataFrame(
+            output, columns=self.extracted_data_cols)
         # in case two parameters could be reversed
         if self.reverse:
             self.base_param2, self.base_param1 = self.base_param1, self.base_param2
@@ -49,6 +52,7 @@ class MultiParam(ResonantFrequency):
         self.merged_data.to_csv(os.path.join(self.result_directory,
                                              "CSV_DATA_VOLTAGES_RPP.csv"))
         print("FINISHED PARSING, NOW PLOTTING...")
+        print(self.merged_data.columns)
         self.perform_plotting(self.dispersion)
 
     def perform_plotting(self, dispersion):
@@ -65,13 +69,12 @@ class MultiParam(ResonantFrequency):
                 self.create_dir(dir_name)
                 constant_param1 = self.merged_data[self.merged_data[self.base_param1] == param_value]
                 self.plot_saving("Rpp", dir_name, constant_param1[self.base_param2],
-                                 constant_param1['Rpp_diff'])
+                                 constant_param1['Rpp'])
                 self.plot_saving("Mean voltage", dir_name, constant_param1[self.base_param2],
-                                 constant_param1['M_volt'])
+                                 constant_param1['Mvolt'])
                 sname = f"{str(param_value).replace('-', 'm')}_Freq_result_{self.start_time}_{self.stop_time}.csv"
-                res_savepoint = os.path.join(dir_name, str(
-                    param_value).replace('-', 'm'), sname)
-                constant_param1[[self.base_param2, 'Rpp_diff', 'M_volt']].to_csv(
+                res_savepoint = os.path.join(dir_name, sname)
+                constant_param1[[self.base_param2, 'Rpp', 'Mvolt']].to_csv(
                     res_savepoint, index=False)
         else:
             for param_value in self.merged_data[self.base_param1].unique():
@@ -79,23 +82,32 @@ class MultiParam(ResonantFrequency):
                 dir_name = self.manage_directory(self.result_directory, self.base_param1 +
                                                  "_" + str(param_value))
                 constant_param1 = self.merged_data[self.merged_data[self.base_param1] == param_value]
-                for vector_orientation in ['Fmx', 'Fmy', 'Fmz']:
-                    self.plot_saving(vector_orientation, dir_name,
+                for vector_orientation in ['x', 'y', 'z']:
+                    self.plot_saving(f"F_m{vector_orientation}", dir_name,
                                      constant_param1[self.base_param2],
-                                     constant_param1[vector_orientation])
+                                     constant_param1['F'+vector_orientation],
+                                     self.base_param2, 'F' + vector_orientation)
+                    self.plot_saving(f"Average_m{vector_orientation}", dir_name,
+                                     constant_param1[self.base_param2],
+                                     constant_param1['m'+vector_orientation],
+                                     self.base_param2, 'Avg' + vector_orientation)
                 sname = f"Resonant_frequencies_{str(param_value).replace('-', 'm')}.csv"
                 res_savepoint = os.path.join(dir_name, sname)
-                constant_param1[[self.base_param2, 'Fmx',
-                                 'Fmy', 'Fmz']].to_csv(res_savepoint, index=False)
+                constant_param1[[self.base_param2, 'Fx',
+                                 'Fy', 'Fz', 'ax', 'ay', 'az']].to_csv(res_savepoint, index=False)
 
-    def plot_saving(self, name, dir_name, array1, array2=None):
+    def plot_saving(self, name, dir_name, array1, array2=None, xlab=None, ylab=None):
         fig = plt.figure()
         if array2 is None:
             plt.plot(array1)
         else:
             plt.plot(array1, array2, 'o')
         fig.suptitle(name, fontsize=12)
-        savename = name + str(self.start_time) + " " + str(self.stop_time)
+        if xlab is not None:
+            plt.xlabel(xlab)
+        if ylab is not None:
+            plt.ylabel(ylab)
+        savename = f"{name}_{self.start_time}_{self.stop_time}"
         savename = os.path.join(dir_name, savename)
         self.save_object(fig, savename)
         plt.close(fig)
@@ -125,16 +137,17 @@ class MultiParam(ResonantFrequency):
             df = self.pickle_load_procedure(filename)
         except AssertionError as e:
             raise AnalysisException(e, filename, null_val=[
-                                    param1[1], param2[1], 0, 0, 0, 0, 0])
+                                    param1[1], param2[1], *self.zerout])
         try:
             savename = os.path.join(self.result_directory, str(param1[1]) + "_" +
                                     str(param2[1]))
-            return (param1[1], param2[1], *self.standard_fourier_analysis(df, savename)[:2])
+            return [param1[1], param2[1], *self.standard_fourier_analysis(df, savename)]
 
-        except (ValueError, KeyError) as e:
+        except ValueError as e:
+            print(e)
             raise AnalysisException(e, filename, null_val=[
-                                    param1[1], param2[1], 0, 0, 0, 0, 0])
-        return [param1[1], param2[1], 0, 0, 0, 0, 0]
+                                    param1[1], param2[1], *self.zerout])
+        return [param1[1], param2[1], *self.zerout]
 
 
 if __name__ == "__main__":

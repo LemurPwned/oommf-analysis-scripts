@@ -23,7 +23,6 @@ class ParsingUtils:
         if mult % 5 == 0:
             load_val_eq = "="*mult
             load_val_dot = "*"*(bar_length-mult)
-            err_msg = err_msg.replace("\n", "")
             err_msg = f"{ColorCodes.RED}{err_msg}{ColorCodes.RESET_ALL}"
             if msg is not None:
                 print(

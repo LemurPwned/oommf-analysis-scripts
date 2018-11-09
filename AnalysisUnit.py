@@ -31,6 +31,8 @@ class AnalysisUnit:
 
         specification = self.extract_arguments_from_json(filename)
         self.set_inner_interface_specification(specification)
+        self.base_data_cols = ['Rpp', 'Mvolt', 'Fx',
+                               'Fy', 'Fz', 'mx', 'my', 'mz', 'ax', 'ay', 'az']
 
     def set_inner_interface_specification(self, specification):
         inner_interface = Interface(specification)
@@ -57,7 +59,7 @@ class AnalysisUnit:
             object_type.savefig(savename + '.png')
             return True
         elif type(object_type) == pd.DataFrame:
-            object_type.to_pickle(savename + '.pkl')
+            object_type.to_pickle(savename)
             return True
         elif type(object_type) == pd.Series:
             object_type.to_pickle(savename + "_series" +
@@ -85,7 +87,7 @@ class AnalysisUnit:
         """
         directory_roots = os.path.join(self.directory, '*/*.odt')
         filename_candidates = glob.glob(directory_roots, recursive=True)
-        print(f"{ColorCodes.CYAN}{len(filename_candidates){ColorCodes.RESET_ALL}} file candidates found...")
+        print(f"{ColorCodes.CYAN}{len(filename_candidates)}{ColorCodes.RESET_ALL} file candidates found...")
         print(
             f"{ColorCodes.MAGENTA}ROOT DIRECTORY{ColorCodes.RESET_ALL} {directory_roots}")
         if len(filename_candidates) == 0:
@@ -98,10 +100,11 @@ class AnalysisUnit:
         # reads each .odt file and returns pandas DataFrame object
         pickle_path = os.path.join(os.path.dirname(filename),
                                    os.path.basename(filename).replace(".odt",
-                                                                      "stages.pkl"))
+                                                                      ".pkl"))
         if self.clear or (not os.path.isfile(pickle_path)):
-            # print("\rPickle not found, parsing ... {}".format(filename))
+            # print("\rPickle not found, parsing ... {}".format(pickle_path))
             df, _ = ParsingUtils.get_odt_file_data(filename)
+            self.save_object(df, pickle_path)
         else:
             # if found, load pickle
             with open(pickle_path, 'rb') as f:
