@@ -40,8 +40,8 @@ class ResonantFrequency(AnalysisUnit):
         output = np.array(output)
         # sort using the first column, ie. params
         output = output[output[:, 0].argsort()]
-        self.extracted_data_cols = [
-            self.param_name, 'Rpp', 'Mvolt', 'Fx', 'Fy', 'Fz', 'mx', 'my', 'mz', 'ax', 'ay', 'az']
+        self.extracted_data_cols = [self.param_name].extend(
+            self.base_data_cols)
         self.p_dict = {
             col: output[:, i] for i, col in enumerate(self.extracted_data_cols)
         }
@@ -51,7 +51,7 @@ class ResonantFrequency(AnalysisUnit):
             self.resonance_peak_module()
 
     def dispersion_module(self):
-        for i, vector_orientation in enumerate(['x', 'y', 'z']):
+        for vector_orientation in ['x', 'y', 'z']:
             fig = plt.figure()
             plt.plot(self.p_dict[self.param_name],
                      self.p_dict['F' + vector_orientation], 'o')
