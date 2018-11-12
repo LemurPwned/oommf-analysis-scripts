@@ -85,7 +85,7 @@ class AnalysisUnit:
         """
         directory_roots = os.path.join(self.directory, '*/*.odt')
         filename_candidates = glob.glob(directory_roots, recursive=True)
-        print(f"{ColorCodes.CYAN}{len(filename_candidates){ColorCodes.RESET_ALL}} file candidates found...")
+        print(f"{ColorCodes.CYAN}{len(filename_candidates)}{ColorCodes.RESET_ALL} file candidates found...")
         print(
             f"{ColorCodes.MAGENTA}ROOT DIRECTORY{ColorCodes.RESET_ALL} {directory_roots}")
         if len(filename_candidates) == 0:
