@@ -124,10 +124,11 @@ class MultiParam(ResonantFrequency):
             self.base_param2 = base_params[2]
 
         if self.extract_frequency:
+            print(f"Extracting frequency ... {base_params} in {self.frequency_name}")
             if base_params[0] == self.frequency_name:
-                self.set_resonant_frequency(base_params[1])
-            elif base_params[2] == self.frequency_name:
-                self.set_resonant_frequency(base_params[0])
+                self.set_resonant_frequency(float(base_params[1]))
+            elif base_params[1] == self.frequency_name:
+                self.set_resonant_frequency(float(base_params[2]))
         return base_param1, base_param2
 
     def multi_parameter_analysis(self, filename):
@@ -143,7 +144,7 @@ class MultiParam(ResonantFrequency):
                                     str(param2[1]))
             return [param1[1], param2[1], *self.standard_fourier_analysis(df, savename)]
 
-        except ValueError as e:
+        except (ValueError, KeyError) as e:
             print(e)
             raise AnalysisException(e, filename, null_val=[
                                     param1[1], param2[1], *self.zerout])
