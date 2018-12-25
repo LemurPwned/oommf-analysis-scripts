@@ -74,7 +74,6 @@ class MultiParam(ResonantFrequency):
                                  constant_param1['Mvolt'])
                 sname = f"{str(param_value).replace('-', 'm')}_Freq_result_{self.start_time}_{self.stop_time}.csv"
                 res_savepoint = os.path.join(dir_name, sname)
-                self.magcut_handler(constant_param1, dir_name)
                 constant_param1[[self.base_param2, 'Rpp', 'Mvolt']].to_csv(
                     res_savepoint, index=False)
         else:
@@ -141,8 +140,8 @@ class MultiParam(ResonantFrequency):
             raise AnalysisException(e, filename, null_val=[
                                     param1[1], param2[1], *self.zerout])
         try:
-            savename = os.path.join(self.result_directory, str(param1[1]) + "_" +
-                                    str(param2[1]))
+            savename = os.path.join(self.result_directory, f"{param1[1]}_{param2[1]}")
+            self.magcut_handler(df, os.path.dirname(filename))
             return [param1[1], param2[1], *self.standard_fourier_analysis(df, savename)]
 
         except (ValueError, KeyError) as e:

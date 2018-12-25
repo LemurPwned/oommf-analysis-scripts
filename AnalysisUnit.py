@@ -1,4 +1,6 @@
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 import numpy as np
 import json
@@ -58,6 +60,7 @@ class AnalysisUnit:
     def save_object(self, object_type, savename):
         if type(object_type) == mpl.figure.Figure:
             object_type.savefig(f"{savename}.png")
+            plt.close(object_type)
             return True
         elif type(object_type) == pd.DataFrame:
             object_type.to_pickle(f"{savename}.pkl")
@@ -104,7 +107,7 @@ class AnalysisUnit:
         if self.clear or (not os.path.isfile(pickle_path)):
             # print("\rPickle not found, parsing ... {}".format(pickle_path))
             df, _ = ParsingUtils.get_odt_file_data(filename)
-            self.save_object(df, pickle_path)
+            self.save_object(df, pickle_path.replace('.pkl', ''))
         else:
             # if found, load pickle
             with open(pickle_path, 'rb') as f:
@@ -149,11 +152,11 @@ class AnalysisUnit:
         ax = fig.add_subplot(111, projection='3d')
         ax.scatter(df[cols[0]], df[cols[1]], df[cols[2]])
         ax.set_xlabel('Mx')
-        ax.set_xlabel('My')
-        ax.set_xlabel('Mz')
-        savename = os.path.join(savedir, f"MTrajectory_{cols[0]}")
+        ax.set_ylabel('My')
+        ax.set_zlabel('Mz')
+        savename = os.path.join(savedir, f"MTrajectory_{cols[0].strip()}")
         self.save_object(fig, savename)
-
+        
     def extract_mag_cut_trajcetories(self, all_cols):
         """
         extracts the mag cut columns that are later used to plot
@@ -163,11 +166,12 @@ class AnalysisUnit:
         patterns = ['(MF_X_MagCut:)([A-z]+:)(area mx)',
                     '(MF_Y_MagCut:)([A-z]+:)(area my)',
                     '(MF_Z_MagCut:)([A-z]+:)(area mz)']
+
+        cuts = ['area mx', 'area my', 'area mz']
         mag_cuts = [[], [] ,[]]
         for col in all_cols:
-            for i, patt in enumerate(patterns):
-                m = re.match(col, patt)
-                if m is not None:
+            for i, patt in enumerate(cuts):
+                if patt in col:
                    mag_cuts[i].append(col)
         return mag_cuts
 
@@ -185,10 +189,10 @@ class AnalysisUnit:
             zm = np.array(map(lambda x: SequenceMatcher(None, x,
                                                         mag_cut_cols[0][i]),
                      mag_cut_cols[2])).argmax(axis=0)
-            mag_cut_pairs.append((i, mag_cut_cols[1][ym], mag_cut_cols[2][zm]))
-
+            mag_cut_pairs.append((mag_cut_cols[0][i], mag_cut_cols[1][ym],
+                                  mag_cut_cols[2][zm]))
         for mag_cut_pair in mag_cut_pairs:
-            self.plot_magnetisation_trajectiories(df, mag_cut_cols,
+            self.plot_magnetisation_trajectiories(df, mag_cut_pair,
                                                   savedir)
 
 
