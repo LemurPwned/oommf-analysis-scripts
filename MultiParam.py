@@ -74,6 +74,7 @@ class MultiParam(ResonantFrequency):
                                  constant_param1['Mvolt'])
                 sname = f"{str(param_value).replace('-', 'm')}_Freq_result_{self.start_time}_{self.stop_time}.csv"
                 res_savepoint = os.path.join(dir_name, sname)
+                self.magcut_handler(constant_param1, dir_name)
                 constant_param1[[self.base_param2, 'Rpp', 'Mvolt']].to_csv(
                     res_savepoint, index=False)
         else:

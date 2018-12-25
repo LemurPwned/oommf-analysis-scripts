@@ -78,6 +78,13 @@
         "help": "for analysis sweep",
         "type": "bool",
         "action": "store_true"
+      },
+      {
+        "name": "trajectory",
+        "short": "t",
+        "help": "extract magnetisation trajectory from MagCut",
+        "type": "bool",
+        "action": "store_true"
       }
     ]
 }

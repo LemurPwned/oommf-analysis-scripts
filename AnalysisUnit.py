@@ -6,10 +6,11 @@ import os
 import glob
 import pickle
 import sys
+import re
 from Interface import Interface, ParsingStage
 from ParsingUtils import ParsingUtils
 from color_term import ColorCodes
-
+from difflib import SequenceMatcher
 
 class AnalysisUnit:
     def __init__(self, filename):
@@ -56,14 +57,13 @@ class AnalysisUnit:
 
     def save_object(self, object_type, savename):
         if type(object_type) == mpl.figure.Figure:
-            object_type.savefig(savename + '.png')
+            object_type.savefig(f"{savename}.png")
             return True
         elif type(object_type) == pd.DataFrame:
-            object_type.to_pickle(savename)
+            object_type.to_pickle(f"{savename}.pkl")
             return True
         elif type(object_type) == pd.Series:
-            object_type.to_pickle(savename + "_series" +
-                                  object_type.columns + ".pkl")
+            object_type.to_pickle(f"{savename}_series_{object_type.columns}.pkl")
         return False
 
     def manage_directory(self, base_name, dir_name="Results"):
@@ -138,3 +138,57 @@ class AnalysisUnit:
 
     def set_resonant_frequency(self, extracted_frequency):
         self.resonant_frequency = extracted_frequency
+
+    def plot_magnetisation_trajectiories(self, df, cols, savedir):
+        """
+        plots the magnetisation trajectory using the 3d scatterplot
+        """
+        if (len(cols) != 3):
+            raise ValueError("Invalid number of cuts to create trajectory")
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(df[cols[0]], df[cols[1]], df[cols[2]])
+        ax.set_xlabel('Mx')
+        ax.set_xlabel('My')
+        ax.set_xlabel('Mz')
+        savename = os.path.join(savedir, f"MTrajectory_{cols[0]}")
+        self.save_object(fig, savename)
+
+    def extract_mag_cut_trajcetories(self, all_cols):
+        """
+        extracts the mag cut columns that are later used to plot
+        the magnetisation trajectory from the cut
+        """
+        # find any magnetization
+        patterns = ['(MF_X_MagCut:)([A-z]+:)(area mx)',
+                    '(MF_Y_MagCut:)([A-z]+:)(area my)',
+                    '(MF_Z_MagCut:)([A-z]+:)(area mz)']
+        mag_cuts = [[], [] ,[]]
+        for col in all_cols:
+            for i, patt in enumerate(patterns):
+                m = re.match(col, patt)
+                if m is not None:
+                   mag_cuts[i].append(col)
+        return mag_cuts
+
+    def magcut_handler(self, df, savedir):
+        """
+        handles the presence of MF_*_MagCut columns and
+        saves the magnetization directories
+        """
+        mag_cut_cols = self.extract_mag_cut_trajcetories(df.columns)
+        mag_cut_pairs = []
+        for i in range(len(mag_cut_cols[0])):
+            ym = np.array(map(lambda x: SequenceMatcher(None, x,
+                                                        mag_cut_cols[0][i]),
+                     mag_cut_cols[1])).argmax(axis=0)
+            zm = np.array(map(lambda x: SequenceMatcher(None, x,
+                                                        mag_cut_cols[0][i]),
+                     mag_cut_cols[2])).argmax(axis=0)
+            mag_cut_pairs.append((i, mag_cut_cols[1][ym], mag_cut_cols[2][zm]))
+
+        for mag_cut_pair in mag_cut_pairs:
+            self.plot_magnetisation_trajectiories(df, mag_cut_cols,
+                                                  savedir)
+
+
