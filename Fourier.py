@@ -12,8 +12,9 @@ from AnalysisUnit import AnalysisUnit
 
 
 class ResonantFrequency(AnalysisUnit):
-    def __init__(self, filename):
-        super().__init__(filename)
+    def __init__(self, interface="interface.json",
+                 defaults="default_param_set.json"):
+        super().__init__(interface, defaults)
         self.set_parameters(**self.startup_dict)
         if self.directory is None:
             raise ValueError("Invalid directory ")
@@ -212,5 +213,5 @@ class ResonantFrequency(AnalysisUnit):
 
 
 if __name__ == "__main__":
-    rf = ResonantFrequency("interface.json")
+    rf = ResonantFrequency()
     rf.initialize_analysis()

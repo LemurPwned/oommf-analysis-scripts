@@ -12,8 +12,9 @@ from Fourier import ResonantFrequency
 
 
 class MultiParam(ResonantFrequency):
-    def __init__(self, filename):
-        super().__init__(filename)
+    def __init__(self,  interface="interface.json",
+                 defaults="default_param_set.json"):
+        super().__init__(interface, defaults)
         self.set_parameters(**self.startup_dict)
         if self.directory is None:
             raise ValueError("Invalid directory ")
@@ -124,7 +125,8 @@ class MultiParam(ResonantFrequency):
             self.base_param2 = base_params[2]
 
         if self.extract_frequency:
-            print(f"Extracting frequency ... {base_params} in {self.frequency_name}")
+            print(
+                f"Extracting frequency ... {base_params} in {self.frequency_name}")
             if base_params[0] == self.frequency_name:
                 self.set_resonant_frequency(float(base_params[1]))
             elif base_params[1] == self.frequency_name:
@@ -140,7 +142,8 @@ class MultiParam(ResonantFrequency):
             raise AnalysisException(e, filename, null_val=[
                                     param1[1], param2[1], *self.zerout])
         try:
-            savename = os.path.join(self.result_directory, f"{param1[1]}_{param2[1]}")
+            savename = os.path.join(
+                self.result_directory, f"{param1[1]}_{param2[1]}")
             self.magcut_handler(df, os.path.dirname(filename))
             return [param1[1], param2[1], *self.standard_fourier_analysis(df, savename)]
 

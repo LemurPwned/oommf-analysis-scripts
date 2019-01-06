@@ -16,7 +16,8 @@ from difflib import SequenceMatcher
 
 
 class AnalysisUnit:
-    def __init__(self, filename):
+    def __init__(self, interface, defaults):
+        self.defaults = defaults
         self.startup_dict = None
         self.directory = None
         self.clear = False
@@ -33,14 +34,14 @@ class AnalysisUnit:
         self.frequency_name = 'freq'
         self.extract_frequency = False
 
-        specification = self.extract_arguments_from_json(filename)
+        specification = self.extract_arguments_from_json(interface)
         self.set_inner_interface_specification(specification)
         self.base_data_cols = ['Rpp', 'Mvolt', 'Fx',
                                'Fy', 'Fz', 'mx', 'my', 'mz', 'ax', 'ay', 'az']
 
     def set_inner_interface_specification(self, specification):
         inner_interface = Interface(specification)
-        ps = ParsingStage(inner_interface)
+        ps = ParsingStage(inner_interface, self.defaults)
         self.startup_dict = ps.resultant_dict
         if self.startup_dict is None:
             raise ValueError("No arguments specified")

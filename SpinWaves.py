@@ -11,15 +11,33 @@ from matplotlib.widgets import Button
 
 
 class SpinWave(AnalysisUnit):
-    def __init__(self, filename):
-        super().__init__(filename)
+    def __init__(self, interface='interfaces/spin_wave.json',
+                 defaults='interfaces/defaults/spin_defaults.json'):
+        super().__init__(interface, defaults)
         self.set_parameters(**self.startup_dict)
+        self.decode_args()
         if self.directory is None:
             raise ValueError("Invalid directory ")
         else:
             # prepare resulting directory
             self.result_directory = self.manage_directory(self.directory)
         self.required_extension = '.ovf'
+
+    def decode_args(self):
+        m_dict = {
+            'mx': 0,
+            'x': 0,
+            'my': 1,
+            'y': 1,
+            'mz': 2,
+            'z': 2
+        }
+        try:
+            self.m_component = m_dict[self.component.lower()]
+        except KeyError:
+            raise ValueError("Invalid component.")
+        if self.step < 1:
+            raise ValueError("Argmuent step must be larger than 0")
 
     def plot_waves(self):
         self.file_names = list(map(lambda x: os.path.join(self.directory, x),
@@ -33,7 +51,6 @@ class SpinWave(AnalysisUnit):
         vectors = vectors.reshape((int(header['znodes']),
                                    int(header['ynodes']),
                                    int(header['xnodes']), 3))
-        print(vectors.shape)
 
         fig = plt.figure()
         self.ax = plt.subplot2grid((5, 5), (0, 0), colspan=5,
@@ -48,15 +65,15 @@ class SpinWave(AnalysisUnit):
         butt_l.on_clicked(self.left_onclicked)
         butt_r.on_clicked(self.right_onclicked)
 
-        mx = vectors[0, 0, :, 0]
+        m = vectors[0, 0, :, self.m_component]
         x_vals = [i*header['xstepsize'] for i in
                   range(int(header['xnodes']))]
-        hpl = self.ax.plot(x_vals, mx)[0]
+        hpl = self.ax.plot(x_vals, m)[0]
         self.ax.hpl = hpl
         self.ax.set_xlabel('x [nm]')
-        self.ax.set_ylabel('Mx')
+        self.ax.set_ylabel(self.component)
         self.ax.set_title(f"{self.i}/{self.total_its}")
-        self.ax.axis([0, np.max(x_vals), -1, 1])
+        self.ax.axis([0, np.max(x_vals), -1.1, 1.1])
         plt.show()
 
     def replot_data(self):
@@ -64,28 +81,27 @@ class SpinWave(AnalysisUnit):
         header, vectors = ParsingUtils.binary_format_reader(
             filename=self.file_names[self.i])
         # reshape
-        print(self.ax.hpl)
         vectors = vectors.reshape((int(header['znodes']),
                                    int(header['ynodes']),
                                    int(header['xnodes']), 3))
-        mx = vectors[0, 0, :, 0]
-        self.ax.hpl.set_ydata(mx)
+        m = vectors[0, 0, :, self.m_component]
+        self.ax.hpl.set_ydata(m)
         self.ax.set_title(f"{self.i}/{self.total_its}")
         self.ax.get_figure().canvas.draw()
 
     def left_onclicked(self, event):
         '''try to decrement data index, replot if success'''
-        if self.i - 100 > 0:
-            self.i -= 100
+        if self.i - self.step > 0:
+            self.i -= self.step
             self.replot_data()
 
     def right_onclicked(self, event):
         '''try to increment data index, replot if success'''
-        if self.i + 100 < self.total_its:
-            self.i += 100
+        if self.i + self.step < self.total_its:
+            self.i += self.step
             self.replot_data()
 
 
 if __name__ == '__main__':
-    spw = SpinWave('interface.json')
+    spw = SpinWave()
     spw.plot_waves()
