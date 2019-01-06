@@ -14,6 +14,7 @@ from ParsingUtils import ParsingUtils
 from color_term import ColorCodes
 from difflib import SequenceMatcher
 
+
 class AnalysisUnit:
     def __init__(self, filename):
         self.startup_dict = None
@@ -66,7 +67,8 @@ class AnalysisUnit:
             object_type.to_pickle(f"{savename}.pkl")
             return True
         elif type(object_type) == pd.Series:
-            object_type.to_pickle(f"{savename}_series_{object_type.columns}.pkl")
+            object_type.to_pickle(
+                f"{savename}_series_{object_type.columns}.pkl")
         return False
 
     def manage_directory(self, base_name, dir_name="Results"):
@@ -156,7 +158,7 @@ class AnalysisUnit:
         ax.set_zlabel('Mz')
         savename = os.path.join(savedir, f"MTrajectory_{cols[0].strip()}")
         self.save_object(fig, savename)
-        
+
     def extract_mag_cut_trajcetories(self, all_cols):
         """
         extracts the mag cut columns that are later used to plot
@@ -168,11 +170,11 @@ class AnalysisUnit:
                     '(MF_Z_MagCut:)([A-z]+:)(area mz)']
 
         cuts = ['area mx', 'area my', 'area mz']
-        mag_cuts = [[], [] ,[]]
+        mag_cuts = [[], [], []]
         for col in all_cols:
             for i, patt in enumerate(cuts):
                 if patt in col:
-                   mag_cuts[i].append(col)
+                    mag_cuts[i].append(col)
         return mag_cuts
 
     def magcut_handler(self, df, savedir):
@@ -185,14 +187,12 @@ class AnalysisUnit:
         for i in range(len(mag_cut_cols[0])):
             ym = np.array(map(lambda x: SequenceMatcher(None, x,
                                                         mag_cut_cols[0][i]),
-                     mag_cut_cols[1])).argmax(axis=0)
+                              mag_cut_cols[1])).argmax(axis=0)
             zm = np.array(map(lambda x: SequenceMatcher(None, x,
                                                         mag_cut_cols[0][i]),
-                     mag_cut_cols[2])).argmax(axis=0)
+                              mag_cut_cols[2])).argmax(axis=0)
             mag_cut_pairs.append((mag_cut_cols[0][i], mag_cut_cols[1][ym],
                                   mag_cut_cols[2][zm]))
         for mag_cut_pair in mag_cut_pairs:
             self.plot_magnetisation_trajectiories(df, mag_cut_pair,
                                                   savedir)
-
-
