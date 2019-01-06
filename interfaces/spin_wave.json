@@ -34,6 +34,18 @@
       "help": "save the animation without displaying it",
       "type": "bool",
       "action": "store_true"
+    },
+    {
+      "name": "zshift",
+      "short": "z",
+      "help": "shift in z nodes",
+      "type": "int"
+    },
+    {
+      "name": "yshift",
+      "short": "y",
+      "help": "shift in y nodes",
+      "type": "int"
     }
   ]
 }

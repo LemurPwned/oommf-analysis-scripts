@@ -78,7 +78,8 @@ class SpinWave(AnalysisUnit):
         self.ax.hpl = hpl
         self.ax.set_xlabel('x [nm]')
         self.ax.set_ylabel(self.component)
-        self.ax.set_title(f"{self.i}/{self.total_its}")
+        self.ax.set_title(
+            f"{self.i}/{self.total_its}; POS z:{self.zshift} y:{self.yshift}")
         self.ax.axis([0, np.max(x_vals), -1.1, 1.1])
 
         if self.write:
@@ -97,9 +98,10 @@ class SpinWave(AnalysisUnit):
         vectors = vectors.reshape((int(header['znodes']),
                                    int(header['ynodes']),
                                    int(header['xnodes']), 3))
-        m = vectors[0, 0, :, self.m_component]
+        m = vectors[self.zshift, self.yshift, :, self.m_component]
         self.ax.hpl.set_ydata(m)
-        self.ax.set_title(f"{self.i}/{self.total_its}")
+        self.ax.set_title(
+            f"{self.i}/{self.total_its}; POS z:{self.zshift} y:{self.yshift}")
         self.ax.get_figure().canvas.draw()
         if num != -1:
             if self.i + self.step < self.total_its:
