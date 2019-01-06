@@ -8,6 +8,7 @@ from Interface import asynchronous_pool_order
 from ParsingUtils import ParsingUtils
 
 from matplotlib.widgets import Button
+import matplotlib.animation as animation
 
 
 class SpinWave(AnalysisUnit):
@@ -38,8 +39,12 @@ class SpinWave(AnalysisUnit):
             raise ValueError("Invalid component.")
         if self.step < 1:
             raise ValueError("Argmuent step must be larger than 0")
+        if self.write:
+            Writer = animation.writers['ffmpeg']
+            self.writer = Writer(
+                fps=15, metadata=dict(artist='Me'), bitrate=1800)
 
-    def plot_waves(self):
+   def plot_waves(self):
         self.file_names = list(map(lambda x: os.path.join(self.directory, x),
                                    sorted(filter(lambda x: x.endswith('.ovf'),
                                                  os.listdir(self.directory)))))
