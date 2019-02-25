@@ -85,7 +85,7 @@ class SpinWave(AnalysisUnit):
         if self.write:
             anim = animation.FuncAnimation(fig, self.replot_data, int(self.total_its/self.step),
                                            interval=50, blit=False)
-            anim.save('spins.mp4', writer=self.writer)
+            anim.save(os.path.join(self.result_directory, f'{self.component}_spins.mp4'), writer=self.writer)
             return
 
         plt.show()
